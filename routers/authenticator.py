@@ -1,102 +1,78 @@
 import os
 from dotenv import load_dotenv
-from authlib.integrations.starlette_client import OAuth
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request, Response, HTTPException
 from fastapi.responses import RedirectResponse
 
-from google.auth.transport import requests as google_requests
-from google.oauth2.id_token import verify_oauth2_token
+from sqlalchemy.orm import Session
 
-from .dependencies import getCurrentUser
+from modules import oauth2
 
-PROTOCOL = os.getenv('PROTOCOL')
-HOST = os.getenv('HOST')
-# PORT = int(os.getenv('PORT'))
+from db.mysql import database as mysql_db
+from db.mysql import model as mysql_model
+from db.mysql import crud as mysql_crud
+from db.mysql import schema as mysql_schema
+
+from db.sqlite import database as sqlite_db
+from db.sqlite import crud as sqlite_crud
+
+from .dependencies import oauth, getCurrentUser
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
-
-oauth = OAuth()
-
-# OAuth Config
-oauth.register(
-  name='google',
-  client_id=os.getenv('GOOGLE_CLIENT_ID'),
-  client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
-  authorize_url='https://accounts.google.com/o/oauth2/auth',
-  authorize_params=None,
-  access_token_url='https://accounts.google.com/o/oauth2/token',
-  access_token_params=None,
-  refresh_token_url=None,
-  # redirect_uri=f'{PROTOCOL}://{HOST}:{PORT}/auth/google/callback',
-  redirect_uri=f'{PROTOCOL}://{HOST}/auth/google/callback',
-  userinfo_endpoint='https://www.googleapis.com/oauth2/v3/userinfo',
-  jwks_uri='https://www.googleapis.com/oauth2/v3/certs',
-  client_kwargs={'scope': 'openid email profile'}
-)
-
-# oauth.register(
-#   name='kakao',
-#   client_id='KAKAO_CLIENT_ID',
-#   client_secret='KAKAO_CLIENT_SECRET',
-#   authorize_url='https://kauth.kakao.com/oauth/authorize',
-#   authorize_params=None,
-#   access_token_url='https://kauth.kakao.com/oauth/token',
-#   access_token_params=None,
-#   refresh_token_url=None,
-#   # redirect_uri=f'{PROTOCOL}://{HOST}:{PORT}/auth/kakao/callback',
-#   redirect_uri=f'{PROTOCOL}://{HOST}/auth/kakao/callback',
-#   client_kwargs={'scope': 'profile_nickname, profile_image'}
-# )
-
-oauth.register(
-  name='naver',
-  client_id=os.getenv('NAVER_CLIENT_ID'),
-  client_secret=os.getenv('NAVER_CLIENT_SECRET'),
-  authorize_url='https://nid.naver.com/oauth2.0/authorize',
-  authorize_params=None,
-  access_token_url='https://nid.naver.com/oauth2.0/token',
-  access_token_params=None,
-  refresh_token_url=None,
-  # redirect_uri=f'{PROTOCOL}://{HOST}:{PORT}/auth/naver/callback',
-  redirect_uri=f'{PROTOCOL}://{HOST}/auth/naver/callback',
-  userinfo_endpoint='https://openapi.naver.com/v1/nid/me',
-  client_kwargs={'scope': 'profile'}
-)
-
-# @router.post('/')
-# async def generateToken(request: Request)
-
 
 @router.get('/login/{provider}')
 async def login(request: Request, provider: str):
   oauth_client = oauth.create_client(provider)
-  print(oauth_client.__dict__)
-  # redirect_uri = f'{PROTOCOL}://{HOST}:{PORT}/auth/{provider}/callback'
-  redirect_uri = f'{PROTOCOL}://{HOST}/auth/{provider}/callback'
-  return await oauth_client.authorize_redirect(request, redirect_uri)
-  # return await oauth_client.authorize_redirect(request, f'{PROTOCOL}://{HOST}')
+  return await oauth_client.authorize_redirect(request, (await oauth_client.load_server_metadata())['redirect_uri'])
 
 
 @router.get('/{provider}/callback')
-async def auth_callback(request: Request, provider: str):
+async def authCallback(request: Request, provider: str,
+                       db: Session = Depends(mysql_db.getDB)):
   oauth_client = oauth.create_client(provider)
-  print(oauth_client.__dict__)
-  print(oauth.load_config('naver', 'userinfo_url'))
   token = await oauth_client.authorize_access_token(request)
-  print(token)
-  if provider == 'google':
-    # user_info = await oauth_client.parse_id_token(token, nonce=token['userinfo']['nonce'])
-    user_info = await oauth_client.userinfo(token=token)
-  else:
-    user_info = await oauth_client.userinfo(token=token)
-  # userInfo = await oauth_client.get('userinfo_endpoint', token=token)
-  # Here you can create the user in MySQL if not exist
   
-  return user_info
+  try:
+    userinfo = await oauth_client.userinfo(token=token)
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+
+  if not (user := mysql_crud.getUser(db, mysql_model.User(id=oauth2.getOpenID(userinfo, provider), platform=provider))):
+    user = mysql_crud.registerUser(db, mysql_model.User(id=oauth2.getOpenID(userinfo, provider), platform=provider, 
+                                                            nickname=oauth2.getNickname(userinfo, provider), 
+                                                            profile_image_url=oauth2.getProfileImageURL(userinfo, provider)))
+  else:
+    user = mysql_crud.updateUser(db, mysql_model.User(id=oauth2.getOpenID(userinfo, provider), platform=provider,
+                                                      profile_image_url=oauth2.getProfileImageURL(userinfo, provider)))
+  if not user:
+    raise HTTPException(status_code=500, detail='Failed to register user')
+  
+  token = {'access_token': f"{provider} {token['access_token']}",
+          'refresh_token': token['refresh_token'],
+          'token_type': 'Bearer'}
+  return token
+
+
+@router.put('/')
+async def updateUserInfo(userSchemaUpdate: mysql_schema.UserSchemaUpdate,
+                         db: Session = Depends(mysql_db.getDB),
+                         userID: str = Depends(getCurrentUser)):
+  user = mysql_crud.updateUser(db, mysql_model.User(userID, userSchemaUpdate.nickname, userSchemaUpdate.profile_image_url))
+  if not user:
+    raise HTTPException(status_code=500, detail='Failed to update user')
+  return user
+
+
+@router.delete("/")
+async def logout(request: Request, 
+                 db: Session = Depends(sqlite_db.getDB),
+                 userID: str = Depends(getCurrentUser)):
+  if not sqlite_crud.addInvalidAccessToken(db, request.headers.get('Authorization').split(' ', maxsplit=2)[1]):
+    raise HTTPException(status_code=500, detail='Failed to logout')
+  
+  return Response(status_code=204)
+
 
 @router.get("/token")
-async def token(request: Request, userID: str = Depends(getCurrentUser)):
-  oauth_client = oauth.create_client('google')
-  print(userID)
-  return {"access_token": userID}
+async def token(userID: str = Depends(getCurrentUser)):
+  return userID

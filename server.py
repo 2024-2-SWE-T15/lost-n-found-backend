@@ -1,71 +1,86 @@
 import os
+import pytz
 import jwt
 import json
 from dotenv import load_dotenv
+from contextlib import asynccontextmanager
+
+from apscheduler.schedulers.background import BackgroundScheduler
+
+from sqlalchemy.orm import Session
 
 import uvicorn
 from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
+from periodic import clear
+
+from db.sqlite import database as sqlite_db
+from db.sqlite import crud as sqlite_crud
+
 from routers.dependencies import getCurrentUser
 from routers import authenticator
 
-load_dotenv("./config/.env")
 
-app = FastAPI()
+load_dotenv("config/.env")
+
+krTZ = pytz.timezone('Asia/Seoul')
+scheduler = BackgroundScheduler(timezone=krTZ)
+scheduler.add_job(clear.regularClear, 'interval', minutes=5, timezone=krTZ)
+
+def start():
+  scheduler.start()
+
+def shutdown():
+  scheduler.shutdown()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+  start()
+  
+  yield
+  
+  shutdown()
+  
+
+app = FastAPI(lifespan=lifespan)
+
 
 @app.middleware("http")
-async def checkHeader(request, call_next):
-  if request.headers:
-    import requests
-    import rsa
-    import base64
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives.asymmetric import rsa as crypto_rsa
-    from cryptography.hazmat.primitives import serialization
+async def checkAccessToken(request: Request, call_next):
+  flag = True
+  if request.headers.get('Authorization'):
     token = request.headers.get('Authorization')
-    print(token)
-    jwks_uri = 'https://www.googleapis.com/oauth2/v3/certs'
-    r = requests.get('https://www.googleapis.com/oauth2/v3/certs')
-    parsed = json.loads(r.text)['keys']
-    print(parsed)
-    for p in parsed:
-      print(p["n"], p["e"])
-      n_int = int.from_bytes(base64.urlsafe_b64decode(p["n"] + '=='), byteorder='big')
-      e_int = int.from_bytes(base64.urlsafe_b64decode(p["e"] + '=='), byteorder='big')
-
-      public_key = crypto_rsa.RSAPublicNumbers(e_int, n_int).public_key(default_backend())
-
-      public_pem = public_key.public_bytes(
-          encoding=serialization.Encoding.PEM,
-          format=serialization.PublicFormat.SubjectPublicKeyInfo
-      ).decode('utf-8')
+    _, access_token = token.split(' ', maxsplit=1)
+    db = next(sqlite_db.getDB())
+    if sqlite_crud.getInvalidAccessToken(db, access_token):
       try:
-        tokenData = jwt.decode(token, public_pem, algorithms=["RS256"])
-        print(tokenData)
-        data = {key: value for key, value in tokenData.items() if key not in {"exp", "scopes"}}
-        print(data)
-      except (jwt.ExpiredSignatureError, jwt.InvalidTokenError) as e:
-        print("jwtError")
+        del request.headers['Authorization']
+      except KeyError:
+        pass
+    else:
+      flag = False
+      
+  if request.headers.get('Refresh-Token') and flag:
+    try:
+      del request.headers['Refresh-Token']
+    except KeyError:
+      pass
   
   response = await call_next(request)
   return response
+
 app.add_middleware(SessionMiddleware, secret_key=os.getenv('SECRET'))
 app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
 
+
 app.include_router(authenticator.router)
 
-from fastapi.responses import RedirectResponse
-import requests
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
-GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
-GOOGLE_REDIRECT_URI = f"https://caring-sadly-marmoset.ngrok-free.app/auth/google"
 
 @app.get("/")
 async def root():
   return {"message": "Hello World"}
-
 
 
 if __name__ == '__main__':
