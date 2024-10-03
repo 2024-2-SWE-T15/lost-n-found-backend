@@ -20,11 +20,11 @@ from db.sqlite import database as sqlite_db
 from db.sqlite import crud as sqlite_crud
 
 from routers.dependencies import getCurrentUser
-from routers import authenticator
-
+from routers import authenticator, postboard, coordinates
 
 load_dotenv("config/.env")
 
+# scheduler
 krTZ = pytz.timezone('Asia/Seoul')
 scheduler = BackgroundScheduler(timezone=krTZ)
 scheduler.add_job(clear.regularClear, 'interval', minutes=5, timezone=krTZ)
@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-
+# middlewares
 @app.middleware("http")
 async def checkAccessToken(request: Request, call_next):
   flag = True
@@ -74,10 +74,13 @@ async def checkAccessToken(request: Request, call_next):
 app.add_middleware(SessionMiddleware, secret_key=os.getenv('SECRET'))
 app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
 
-
+# routers
 app.include_router(authenticator.router)
+app.include_router(coordinates.router)
+app.include_router(postboard.router)
 
 
+# root route
 @app.get("/")
 async def root():
   return {"message": "Hello World"}

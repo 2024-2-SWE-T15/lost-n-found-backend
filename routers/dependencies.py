@@ -3,6 +3,8 @@ import httpx
 from datetime import timedelta
 from dotenv import load_dotenv
 
+from sqlalchemy.orm import Session
+
 from fastapi import Request, HTTPException, Depends
 from fastapi_login import LoginManager
 from authlib.integrations.starlette_client import OAuth
@@ -11,6 +13,10 @@ from google.auth.transport import requests as google_requests
 from google.oauth2.id_token import verify_oauth2_token
 
 from modules import oauth2
+
+from db.mysql.database import SessionLocal, getDB
+from db.mysql.model import User
+
 
 load_dotenv('config/.env')
 
@@ -28,10 +34,12 @@ oauth.register(
   authorize_url='https://accounts.google.com/o/oauth2/auth',
   authorize_params={
     'access_type': 'offline',
-    'prompt': 'consent',
   },
   access_token_url='https://accounts.google.com/o/oauth2/token',
-  access_token_params=None,
+  access_token_params={
+    'grant_type': 'refresh_token',
+    'access_type': 'offline',
+  },
   refresh_token_url=None,
   # redirect_uri=f'{PROTOCOL}://{HOST}:{PORT}/auth/google/callback',
   redirect_uri=f'{PROTOCOL}://{HOST}/auth/google/callback',
@@ -47,7 +55,7 @@ oauth.register(
   authorize_params=None,
   access_token_url='https://kauth.kakao.com/oauth/token',
   access_token_params={
-    'prompt': 'select_account',
+    # 'prompt': 'select_account',
   },
   refresh_token_url=None,
   # redirect_uri=f'{PROTOCOL}://{HOST}:{PORT}/auth/kakao/callback',
@@ -82,17 +90,27 @@ async def verifyToken(request: Request):
            'token_type': token_type}
   
   oauth_client = oauth.create_client(provider)
+  
   try:
-    return await oauth_client.userinfo(token=token), provider
+    return str(oauth2.getOpenID(await oauth_client.userinfo(token=token), provider)), provider
   except HTTPException as e:
     raise e
   except httpx.HTTPStatusError as e:
-    print(e.response.json())
     raise oauth2.convertHTTPException(e, provider)
   except Exception as e:
     raise e
 
 
-async def getCurrentUser(token_info = Depends(verifyToken)):
-  (idinfo, provider) = token_info
-  return oauth2.getOpenID(idinfo, provider), provider
+async def getCurrentUser(token_info: tuple[str, str] = Depends(verifyToken),
+                         db: Session = Depends(getDB)):
+  (id, provider) = token_info
+  
+  if not db:
+    with SessionLocal() as db:
+      return db.query(User).filter(User.id == str(id), User.platform == provider).first()
+  return db.query(User).filter(User.id == id, User.platform == provider).first()
+
+async def loadUser(user: User = Depends(getCurrentUser)):
+  if not user:
+    raise HTTPException(status_code=401, detail='Unauthorized access')
+  return user
