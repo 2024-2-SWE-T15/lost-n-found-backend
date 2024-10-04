@@ -34,11 +34,11 @@ async def searchPost(postSchemaSearch: mysql_schema.PostSchemaSearch = Query(Non
   post_df = models2df(mysql_crud.search.get(db, postSchemaSearch))
   tag_matches_df = models2df(mysql_crud.tag_match.getAll(db))
   
-  title_score_df = pd.DataFrame(process.extract(postSchemaSearch.query, post_df['title'].tolist(), scorer=fuzz.partial_ratio, limit=len(post_df)),
+  title_score_df = pd.DataFrame(process.extract(postSchemaSearch.query, post_df['title'].tolist(), scorer=fuzz.partial_token_sort_ratio, limit=len(post_df)),
                                 columns=['title', 'title_score']).drop_duplicates()
-  description_score_df = pd.DataFrame(process.extract(postSchemaSearch.query, post_df['description'].tolist(), scorer=fuzz.partial_ratio, limit=len(post_df)),
+  description_score_df = pd.DataFrame(process.extract(postSchemaSearch.query, post_df['description'].tolist(), scorer=fuzz.partial_token_sort_ratio, limit=len(post_df)),
                                        columns=['description', 'description_score']).drop_duplicates()
-  tag_score_df = pd.DataFrame(mysql_crud.hashtag.fuzzyMatch(db, postSchemaSearch.query), columns=['tag_name', 'hashtag_score'])
+  tag_score_df = pd.DataFrame(mysql_crud.hashtag.fuzzyMatch(db, postSchemaSearch.query, excepts=postSchemaSearch.tags), columns=['tag_name', 'hashtag_score'])
 
   hit_tag_matches_df = tag_matches_df.copy()
   hit_tag_matches_df['rank'] = hit_tag_matches_df.groupby('post_id').cumcount()
@@ -64,6 +64,6 @@ async def searchPost(postSchemaSearch: mysql_schema.PostSchemaSearch = Query(Non
                                 post_data_df['hit_score']**2 * float(os.getenv('TAG_HIT_WEIGHT'))
   post_data_df.drop(columns=['title_score', 'description_score', 'weighted_hashtag_score'], inplace=True)
   
-  post_data_df = post_data_df.sort_values(by='total_score', ascending=False)
+  post_data_df = post_data_df.sort_values(by='total_score', ascending=False).head(10)
   
   return post_data_df.to_dict(orient='records')
