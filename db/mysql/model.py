@@ -32,6 +32,7 @@ class Post(Base):
   update_time = Column(DateTime, nullable=True)
   valid = Column(Boolean, nullable=False, default=True)
   is_lost = Column(Boolean, nullable=False)
+  match_rank = Column(Integer, nullable=False)
   
   user = relationship('User', back_populates='post')
   photo = relationship('Photo', back_populates='post')
@@ -114,5 +115,6 @@ class PostView(Base):
   update_time = Column(DateTime, nullable=True)
   valid = Column(Boolean, nullable=False)
   is_lost = Column(Boolean, nullable=False)
+  match_rank = Column(Integer, nullable=False)
   kept_coordinates = Column(Geometry(geometry_type='POINT', srid=4326), nullable=False)
   stronghold_id = Column(Integer, ForeignKey('strongholds.id'), nullable=False)

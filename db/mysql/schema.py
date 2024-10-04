@@ -25,6 +25,7 @@ class PostSchema(BaseModel):
   update_time: Optional[datetime]
   valid: bool
   is_lost: bool
+  match_rank: int
   
   class Config:
     from_attributes = True
@@ -77,7 +78,7 @@ class TagMatchSchema(BaseModel):
 
 class KeptSchema(BaseModel):
   post_id: str
-  coordinates: tuple
+  coordinates: Optional[tuple[Optional[float], Optional[float]]]
   stronghold_id: Optional[int]
   
   class Config:
@@ -122,7 +123,7 @@ class UserSchemaUpdate(BaseModel):
 class PostSchemaAdd(BaseModel):
   title: str
   coordinates: tuple[float, float]
-  kept_coordinates: Optional[tuple[float, float]]
+  kept_coordinates: Optional[tuple[Optional[float], Optional[float]]]
   stronghold_id: Optional[int]
   hashtags: list[str]
   description: str
@@ -133,12 +134,12 @@ class PostSchemaAdd(BaseModel):
 class PostSchemaUpdate(BaseModel):
   title: Optional[str]
   coordinates: Optional[tuple[float, float]]
-  kept_coordinates: Optional[tuple[float, float]]
+  kept_coordinates: Optional[tuple[Optional[float], Optional[float]]]
   stronghold_id: Optional[int]
   hashtags: Optional[dict[str, str]]
   description: Optional[str]
   photos: Optional[dict[str, str]]
-  personal_idlist: dict[str, Union[dict[str, str], str]]
+  personal_idlist: Optional[dict[str, Union[dict[str, str], str]]]
   
 class PostSchemaSearch(BaseModel):
   query: Optional[str] = ""
