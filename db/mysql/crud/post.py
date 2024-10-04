@@ -1,4 +1,6 @@
-from datetime import datetime
+import os
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -6,6 +8,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from ..model import Post
 from ..schema import PostSchema
 
+
+load_dotenv('config/.env')
 
 def get(db: Session, postSchema: PostSchema):
   query = db.query(Post)
@@ -19,6 +23,21 @@ def get(db: Session, postSchema: PostSchema):
     query = query.filter(Post.is_lost == postSchema.is_lost)
   
   db_item = query.first()
+  return db_item
+
+
+def search(db: Session, postSchema: PostSchema):
+  query = db.query(Post)
+  if postSchema.valid is not None:
+    query = query.filter(Post.valid == postSchema.valid)
+  if postSchema.user_id:
+    query = query.filter(Post.user_id == postSchema.user_id)
+  if postSchema.update_time:
+    query = query.filter(Post.update_time + timedelta(days=int(os.getenv('POST_EXPIRED'))) < postSchema.update_time)
+  if postSchema.is_lost:
+    query = query.filter(Post.is_lost == postSchema.is_lost)
+  
+  db_item = query.all()
   return db_item
 
 
