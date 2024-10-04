@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 
 from sqlalchemy.orm import Session
 
-from modules.utils import models2Array, modelDict
+from modules.utils import models2Array, models2df, mergeDF, modelDict
 
 from db.mysql import database as mysql_db
 from db.mysql import model as mysql_model
@@ -31,10 +31,8 @@ async def searchPost(postSchemaSearch: mysql_schema.PostSchemaSearch = Query(Non
   OTHER_WEIGHT = float(os.getenv('OTHER_WEIGHT'))
   
   
-  data = np.array(models2Array(mysql_crud.search.get(db, postSchemaSearch)), dtype=object)
-  tag_matches = np.array(models2Array(mysql_crud.tag_match.getAll(db)), dtype=object)
-  post_df = pd.DataFrame(data, columns=modelDict[mysql_model.Post],)
-  tag_matches_df = pd.DataFrame(tag_matches, columns=modelDict[mysql_model.TagMatch])
+  post_df = models2df(mysql_crud.search.get(db, postSchemaSearch))
+  tag_matches_df = models2df(mysql_crud.tag_match.getAll(db))
   
   title_score_df = pd.DataFrame(process.extract(postSchemaSearch.query, post_df['title'].tolist(), scorer=fuzz.partial_ratio, limit=len(post_df)),
                                 columns=['title', 'title_score']).drop_duplicates()
@@ -55,11 +53,10 @@ async def searchPost(postSchemaSearch: mysql_schema.PostSchemaSearch = Query(Non
     lambda row: row['hashtag_score'] * weights[row['rank']] if row['rank'] < len(weights) else row['hashtag_score'] * OTHER_WEIGHT, axis=1
   )
   final_tag_matched_score_df = tag_matched_score_df.groupby('post_id')['weighted_hashtag_score'].sum().reset_index()
-
-  post_data_df = pd.merge(post_df, title_score_df, on='title')
-  post_data_df = pd.merge(post_data_df, description_score_df, on='description')
-  post_data_df = pd.merge(post_data_df, final_hit_tag_matches_df, left_on='id', right_on='post_id')
-  post_data_df = pd.merge(post_data_df, final_tag_matched_score_df, on='post_id').drop(columns=['post_id'])
+  
+  post_data_df = mergeDF([post_df, title_score_df, description_score_df, final_hit_tag_matches_df, final_tag_matched_score_df],
+                         ['title', 'description', ('id', 'post_id'), 'post_id'],
+                         ['post_id'])
   
   post_data_df['total_score'] = post_data_df['title_score']**2 * float(os.getenv('TITLE_WEIGHT')) + \
                                 post_data_df['description_score']**2 * float(os.getenv('DESCRIPTION_WEIGHT')) + \
