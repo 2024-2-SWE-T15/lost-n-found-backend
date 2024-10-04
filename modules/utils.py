@@ -1,5 +1,9 @@
 import math
 import base64
+import numpy as np
+import pandas as pd
+
+from typing import Union
 
 from fastapi import HTTPException
 
@@ -129,3 +133,19 @@ def model2Array(model):
 def models2Array(models):
   return [model2Array(model) for model in models]
 
+
+def models2df(models):
+  return pd.DataFrame(np.array(models2Array(models), dtype=object), columns=modelDict[type(models[0])])
+
+
+def mergeDF(df_list:list[pd.DataFrame], on_list=list[Union[str, tuple[str, str]]], drop_list=list[str]):
+  merged = df_list[0]
+  df_list = df_list[1:]
+  for index in range(len(df_list)):
+    _on = on_list[index]
+    if isinstance(_on, tuple):
+      merged = pd.merge(merged, df_list[index], left_on=_on[0], right_on=_on[1])
+    else:
+      merged = pd.merge(merged, df_list[index], on=_on)
+  
+  return merged.drop_duplicates().drop(drop_list, axis=1)
