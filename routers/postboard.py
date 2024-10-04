@@ -1,4 +1,4 @@
-
+import asyncio
 
 from fastapi import APIRouter, Response, HTTPException, Depends, Query, Form
 
@@ -10,6 +10,8 @@ from db.mysql import crud as mysql_crud
 from db.mysql import schema as mysql_schema
 
 from modules.utils import point2TupleStructure, tuple2Point, tuple2PointString, postImgName, dataURL2Img
+
+from tasks.suggest import suggestion
 
 from .dependencies import loadUser
 
@@ -76,6 +78,8 @@ async def registerPost(postSchemaAdd: mysql_schema.PostSchemaAdd,
                                                                                 name=name,
                                                                                 value=value))):
         pass
+  
+  asyncio.create_task(suggestion([post.id], postSchemaAdd.is_lost))
   
   postView = mysql_crud.view.get(db, post.id)
   return point2TupleStructure(postView)
