@@ -14,7 +14,7 @@ from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from periodic import clear
+from tasks import clear
 
 from db.sqlite import database as sqlite_db
 from db.sqlite import crud as sqlite_crud
