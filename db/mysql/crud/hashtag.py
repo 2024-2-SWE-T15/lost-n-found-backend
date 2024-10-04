@@ -22,9 +22,13 @@ def register(db: Session, hashtag: str):
   db.refresh(db_item)
   return db_item
 
-def fuzzyMatch(db: Session, query: str):
+def fuzzyMatch(db: Session, query: str, excepts: list):
   db_items = db.query(Hashtag).all()
-  return process.extract(query, [item.name for item in db_items], limit=len(db_items))
+  if excepts:
+    db_items = [item.name for item in db_items if item.name not in excepts]
+  else:
+    db_items = [item.name for item in db_items]
+  return process.extract(query, db_items, limit=len(db_items))
 
 def update(db: Session, hashtag: str):
   db_item = db.query(Hashtag).filter(Hashtag.name == hashtag).first()
