@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 
 from sqlalchemy.orm import Session
 
-from modules.utils import models2Array
+from modules.utils import models2Array, modelDict
 
 from db.mysql import database as mysql_db
 from db.mysql import model as mysql_model
@@ -33,8 +33,8 @@ async def searchPost(postSchemaSearch: mysql_schema.PostSchemaSearch = Query(Non
   
   data = np.array(models2Array(mysql_crud.search.get(db, postSchemaSearch)), dtype=object)
   tag_matches = np.array(models2Array(mysql_crud.tag_match.getAll(db)), dtype=object)
-  post_df = pd.DataFrame(data, columns=['id', 'title', 'user_id', 'coordinates', 'description', 'created_at', 'updated_at', 'valid', 'is_lost'],)
-  tag_matches_df = pd.DataFrame(tag_matches, columns=['post_id', 'tag_name'])
+  post_df = pd.DataFrame(data, columns=modelDict[mysql_model.Post],)
+  tag_matches_df = pd.DataFrame(tag_matches, columns=modelDict[mysql_model.TagMatch])
   
   title_score_df = pd.DataFrame(process.extract(postSchemaSearch.query, post_df['title'].tolist(), scorer=fuzz.partial_ratio, limit=len(post_df)),
                                 columns=['title', 'title_score']).drop_duplicates()
