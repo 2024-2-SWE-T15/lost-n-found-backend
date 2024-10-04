@@ -147,6 +147,7 @@ class PostSchemaSearch(BaseModel):
   coordinates: Optional[tuple[float, float]] = None
   distance: Optional[float] = None
   is_lost: Optional[bool] = None
+  limit: Optional[int] = 10
 
 # HashTag Schema
 

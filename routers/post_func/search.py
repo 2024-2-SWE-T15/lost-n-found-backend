@@ -64,6 +64,6 @@ async def searchPost(postSchemaSearch: mysql_schema.PostSchemaSearch = Query(Non
                                 post_data_df['hit_score']**2 * float(os.getenv('TAG_HIT_WEIGHT'))
   post_data_df.drop(columns=['title_score', 'description_score', 'weighted_hashtag_score'], inplace=True)
   
-  post_data_df = post_data_df.sort_values(by='total_score', ascending=False).head(10)
+  post_data_df = post_data_df.sort_values(by='total_score', ascending=False).head(postSchemaSearch.limit if postSchemaSearch.limit else 10)
   
   return post_data_df.to_dict(orient='records')
