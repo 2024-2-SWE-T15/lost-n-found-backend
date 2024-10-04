@@ -17,7 +17,7 @@ from db.mysql import schema as mysql_schema
 from db.sqlite import database as sqlite_db
 from db.sqlite import crud as sqlite_crud
 
-from .dependencies import oauth, loadUser
+from .dependencies import oauth, loadUser, verifyToken
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
 
@@ -72,6 +72,11 @@ async def logout(request: Request,
     raise HTTPException(status_code=500, detail='Failed to logout')
   
   return Response(status_code=204)
+
+
+@router.get("/verification")
+async def verifyToken(user: mysql_model.User = Depends(verifyToken)):
+  return Response(status_code=200)
 
 
 @router.get("/token")
