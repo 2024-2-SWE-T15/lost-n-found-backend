@@ -116,7 +116,7 @@ def tokenReform(token: dict, provider: str):
 # model structure
 modelDict = {
   User: ['id', 'nickname', 'profile_image_url', 'create_time', 'update_time'],
-  Post: ['id', 'title', 'user_id', 'coordinates', 'description', 'create_time', 'update_time', 'valid', 'is_lost'],
+  Post: ['id', 'title', 'user_id', 'coordinates', 'description', 'create_time', 'update_time', 'valid', 'is_lost', 'match_rank'],
   Hashtag: ['name', 'last_access'],
   Stronghold: ['id', 'name', 'coordinates', 'description'],
   Photo: ['id', 'post_id', 'extension', 'data'],
