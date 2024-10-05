@@ -2,6 +2,7 @@ import math
 import base64
 import numpy as np
 import pandas as pd
+from datetime import datetime
 
 from typing import Union
 
@@ -10,6 +11,7 @@ from fastapi import HTTPException
 from geoalchemy2 import WKTElement, WKBElement
 from geoalchemy2.shape import to_shape
 from shapely.geometry import Point
+from sqlalchemy.orm.state import InstanceState
 
 from haversine import haversine, inverse_haversine, Unit, Direction
 
@@ -125,10 +127,15 @@ modelDict = {
 }
 
 def model2Array(model):
-  return [(model.__dict__[attr] if not isinstance(model.__dict__[attr], (WKTElement, WKBElement)) 
-           else point2Tuple(model.__dict__[attr]))
-           for attr in modelDict[type(model)]]
-            
+  return [(value if not isinstance(value, (WKTElement, WKBElement)) 
+           else point2Tuple(value))
+           for attr, value in model.__dict__.items() if not isinstance(value, InstanceState)]
+
+def model2Dict(model):
+  return {attr: (value if not isinstance(value, (WKTElement, WKBElement)) 
+                 else point2Tuple(value))
+          for attr, value in model.__dict__.items() if not isinstance(value, InstanceState)}
+
 
 def models2Array(models):
   return [model2Array(model) for model in models]
