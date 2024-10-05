@@ -15,7 +15,10 @@ def get(db: Session, identity: IdentitySchemaGet):
 
 def getAll(db: Session, post_id: str):
   db_items = db.query(Identity).filter(Identity.post_id == post_id).all()
-  return db_items
+  id_dict = {}
+  for db_item in db_items:
+    id_dict[db_item.name] = db_item.value
+  return id_dict
 
 def register(db: Session, identity: IdentitySchema):
   db_item = Identity(
