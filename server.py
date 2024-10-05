@@ -14,10 +14,10 @@ from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from tasks import clear
-
 from db.sqlite import database as sqlite_db
 from db.sqlite import crud as sqlite_crud
+
+from tasks import clear, update
 
 from routers.dependencies import getCurrentUser
 from routers import authenticator, postboard, coordinates
@@ -27,7 +27,8 @@ load_dotenv("config/.env")
 # scheduler
 krTZ = pytz.timezone('Asia/Seoul')
 scheduler = BackgroundScheduler(timezone=krTZ)
-scheduler.add_job(clear.regularClear, 'interval', minutes=5, timezone=krTZ)
+scheduler.add_job(clear.forbiddenToken, 'interval', minutes=5, timezone=krTZ)
+# scheduler.add_job(update.updateMatchRank, 'interval', minutes=30, timezone=krTZ)
 
 def start():
   scheduler.start()
