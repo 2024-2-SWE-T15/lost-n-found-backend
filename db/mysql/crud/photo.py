@@ -11,6 +11,10 @@ def get(db: Session, photo_id: str):
   db_item = db.query(Photo).filter(Photo.id == photo_id).first()
   return db_item
 
+def get(db: Session, post_id: str):
+  db_items = db.query(Photo).filter(Photo.post_id == post_id).all()
+  return [db_item.id for db_item in db_items]
+
 def register(db: Session, photo: PhotoSchema):
   db_item = Photo(
     id=photo.id,
