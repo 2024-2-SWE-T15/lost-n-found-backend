@@ -8,7 +8,7 @@ from db.sqlite import model as sqlite_model
 from db.sqlite import crud as sqlite_crud
 
 
-def forbiddenToken():
+def clearForbiddenToken():
   SessionLocal = sqlite_db.initDB()
   db: Session = SessionLocal()
   try:

@@ -27,7 +27,7 @@ load_dotenv("config/.env")
 # scheduler
 krTZ = pytz.timezone('Asia/Seoul')
 scheduler = BackgroundScheduler(timezone=krTZ)
-scheduler.add_job(clear.forbiddenToken, 'interval', minutes=5, timezone=krTZ)
+scheduler.add_job(clear.clearForbiddenToken, 'interval', minutes=5, timezone=krTZ)
 # scheduler.add_job(update.updateMatchRank, 'interval', minutes=30, timezone=krTZ)
 
 def start():
