@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from ..model import Identity
 from ..schema import IdentitySchema
-from ..schema import IdentitySchemaGet, IdentitySchemaGetAll
+from ..schema import IdentitySchemaGet
 
 
 def get(db: Session, identity: IdentitySchemaGet):
@@ -13,8 +13,8 @@ def get(db: Session, identity: IdentitySchemaGet):
   return db_item
 
 
-def getAll(db: Session, identity: IdentitySchemaGetAll):
-  db_items = db.query(Identity).filter(Identity.post_id == identity.post_id).all()
+def getAll(db: Session, post_id: str):
+  db_items = db.query(Identity).filter(Identity.post_id == post_id).all()
   return db_items
 
 def register(db: Session, identity: IdentitySchema):
