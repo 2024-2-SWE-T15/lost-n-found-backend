@@ -4,12 +4,12 @@ from fastapi import APIRouter, Response, HTTPException, Depends, Query, Form
 
 from sqlalchemy.orm import Session
 
+from modules.utils import point2TupleStructure, tuple2Point, tuple2PointString, postImgName, dataURL2Img, model2Dict
+
 from db.mysql import database as mysql_db
 from db.mysql import model as mysql_model
 from db.mysql import crud as mysql_crud
 from db.mysql import schema as mysql_schema
-
-from modules.utils import point2TupleStructure, tuple2Point, tuple2PointString, postImgName, dataURL2Img
 
 from tasks.suggest import suggestion
 
@@ -25,7 +25,11 @@ async def getPost(post_id: str = Query(...),
   post = mysql_crud.post.get(db, post_id)
   if not post:
     raise HTTPException(status_code=404, detail='Post not found')
-  return post
+  
+  post.tags = mysql_crud.tag_match.get(db, post_id)
+  post.photos = mysql_crud.photo.get(db, post_id)
+  post.personal_idlist = mysql_crud.identity.getAll(db, post_id)
+  return model2Dict(post)
 
 
 @router.post('/')
