@@ -34,10 +34,10 @@ oauth.register(
   authorize_url='https://accounts.google.com/o/oauth2/auth',
   authorize_params={
     'access_type': 'offline',
+    'prompt': 'consent', # authorization prompt : request user consent every time, if not set, it requires refresh token
   },
   access_token_url='https://accounts.google.com/o/oauth2/token',
   access_token_params={
-    'grant_type': 'refresh_token',
     'access_type': 'offline',
   },
   refresh_token_url=None,
