@@ -9,7 +9,7 @@ from ..schema import TagMatchSchema
 
 def get(db: Session, post_id: str):
   db_items = db.query(TagMatch).filter(TagMatch.post_id == post_id).all()
-  return db_items
+  return [tagmatch.tag_name for tagmatch in db_items]
 
 def getByTag(db: Session, tags: list[str]):
   query = db.query(TagMatch)
