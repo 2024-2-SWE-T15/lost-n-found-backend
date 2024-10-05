@@ -164,9 +164,6 @@ class IdentitySchemaGet(BaseModel):
   post_id: str
   name: str
 
-class IdentitySchemaGetAll(BaseModel):
-  post_id: str
-
 # etc
 class CoordinateSchema(BaseModel):
   coordinates: tuple
