@@ -8,12 +8,10 @@ from db.mysql import model as mysql_model
 from db.mysql import crud as mysql_crud
 from db.mysql import schema as mysql_schema
 
-from tasks.suggest import suggestion
-
 from routers.dependencies import loadUser
 
 
-router = APIRouter(prefix='/{post_id}/personal_id', tags=['Post-Personal-ID'])
+router = APIRouter(prefix='/personal_id', tags=['Post-Personal-ID'])
 
 @router.get('/')
 async def getIdentityList(post_id: str,
@@ -27,8 +25,8 @@ async def matchIdentity(post_id: str,
                         identity: mysql_schema.IdentitySchemaMatch = Form(...),
                         db: Session = Depends(mysql_db.getDB)):
 
-  if not (identity := mysql_crud.identity.get(db, mysql_model.Identity(post_id=post_id, name=identity.name, value=identity.value))):
-    raise HTTPException(status_code=500, detail='Failed to match personal ID')
+  if not (identity := mysql_crud.identity.match(db, mysql_model.Identity(post_id=post_id, name=identity.name, value=identity.value))):
+    raise HTTPException(status_code=400, detail='Not matched personal ID')
   
   return identity
 
@@ -46,7 +44,7 @@ async def registerIdentity(post_id: str,
     raise HTTPException(status_code=403, detail='Permission denied')
 
   if not (identity := mysql_crud.identity.register(db, mysql_model.Identity(post_id=post_id, name=identity_name, value=value))):
-    raise HTTPException(status_code=500, detail='Failed to register personal ID')
+    raise HTTPException(status_code=400, detail='Already registered personal ID')
   
   return identity
 
@@ -62,8 +60,8 @@ async def updateIdentity(post_id: str,
   if post.user_id != user.id:
     raise HTTPException(status_code=403, detail='Permission denied')
 
-  if not (identity := mysql_crud.identity.match(db, mysql_model.Identity(post_id=post_id, name=identity_name, value=value))):
-    raise HTTPException(status_code=500, detail='Failed to update personal ID')
+  if not (identity := mysql_crud.identity.update(db, mysql_model.Identity(post_id=post_id, name=identity_name, value=value))):
+    raise HTTPException(status_code=404, detail='Personal ID not found')
   
   return identity
 
@@ -79,6 +77,6 @@ async def deleteIdentity(post_id: str,
     raise HTTPException(status_code=403, detail='Permission denied')
 
   if not mysql_crud.identity.delete(db, mysql_model.Identity(post_id=post_id, name=identity_name)):
-    raise HTTPException(status_code=500, detail='Failed to delete personal ID')
+    raise HTTPException(status_code=404, detail='Personal ID not found')
   
   return Response(status_code=204)
