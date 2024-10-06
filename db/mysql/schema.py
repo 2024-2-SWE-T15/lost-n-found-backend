@@ -163,6 +163,10 @@ class StrongholdSchemaAdd(BaseModel):
 class IdentitySchemaMatch(BaseModel):
   name: str
   value: str
+  
+class IdentitySchemaAdd(BaseModel):
+  name: str
+  value: str
 
 # etc
 class CoordinateSchema(BaseModel):
