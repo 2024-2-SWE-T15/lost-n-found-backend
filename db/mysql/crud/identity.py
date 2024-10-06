@@ -39,3 +39,13 @@ def match(db: Session, identity: IdentitySchema):
     db.refresh(db_item)
     return db_item
   return None
+
+def delete(db: Session, identity: IdentitySchema):
+  db_item = db.query(Identity).filter(Identity.post_id == identity.post_id, Identity.name == identity.name).first()
+  try:
+    db.delete(db_item)
+    db.commit()
+    return True
+  except SQLAlchemyError:
+    db.rollback()
+  return False
