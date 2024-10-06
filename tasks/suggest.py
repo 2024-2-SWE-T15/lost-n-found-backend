@@ -32,7 +32,7 @@ async def suggestion(altered_posts: list[str], is_lost=True):
   db: Session = SessionLocal()
   try:
     post_df = models2df(mysql_crud.post.search(db, mysql_model.Post(valid=True)))
-    tag_matches_df = models2df(mysql_crud.tag_match.getAll(db))
+    tag_matches_df = models2df(mysql_crud.tag_match.all(db))
     
     post_df = post_df[post_df['id'].isin(altered_posts)]
     tag_matches_df = mergeDF([tag_matches_df, post_df[['id', 'coordinates', 'is_lost', 'match_rank']]], on_list=[('post_id', 'id')], drop_list=['id'])

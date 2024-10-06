@@ -7,7 +7,7 @@ from ..model import TagMatch
 from ..schema import TagMatchSchema
 
 
-def get(db: Session, post_id: str):
+def getAll(db: Session, post_id: str):
   db_items = db.query(TagMatch).filter(TagMatch.post_id == post_id).all()
   return [tagmatch.tag_name for tagmatch in db_items]
 
@@ -18,7 +18,7 @@ def getByTag(db: Session, tags: list[str]):
   db_items = query.all()
   return db_items
 
-def getAll(db: Session):
+def all(db: Session):
   return db.query(TagMatch).all()
 
 def register(db: Session, tag_match: TagMatchSchema):
@@ -30,3 +30,13 @@ def register(db: Session, tag_match: TagMatchSchema):
   db.commit()
   db.refresh(db_item)
   return db_item
+
+def delete(db: Session, tag_match: TagMatchSchema):
+  tag_match = db.query(TagMatch).filter(TagMatch.post_id == tag_match.post_id, TagMatch.tag_name == tag_match.tag_name).first()
+  try:
+    db.delete(tag_match)
+    db.commit()
+    return True
+  except SQLAlchemyError:
+    db.rollback()
+  return False

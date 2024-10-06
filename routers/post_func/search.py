@@ -34,7 +34,7 @@ async def searchPost(postSchemaSearch: mysql_schema.PostSchemaSearch = Query(Non
     raise HTTPException(status_code=400, detail='Coordinates and distance must be provided together')
   
   post_df = models2df(mysql_crud.search.get(db, postSchemaSearch))
-  tag_matches_df = models2df(mysql_crud.tag_match.getAll(db))
+  tag_matches_df = models2df(mysql_crud.tag_match.all(db))
 
 
   if postSchemaSearch.coordinates and postSchemaSearch.distance:
