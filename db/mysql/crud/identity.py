@@ -40,6 +40,13 @@ def match(db: Session, identity: IdentitySchema):
     return db_item
   return None
 
+def update(db: Session, identity: IdentitySchema):
+  db_item = db.query(Identity).filter(Identity.post_id == identity.post_id, Identity.name == identity.name).first()
+  db_item.value = identity.value
+  db.commit()
+  db.refresh(db_item)
+  return db_item
+
 def delete(db: Session, identity: IdentitySchema):
   db_item = db.query(Identity).filter(Identity.post_id == identity.post_id, Identity.name == identity.name).first()
   try:
