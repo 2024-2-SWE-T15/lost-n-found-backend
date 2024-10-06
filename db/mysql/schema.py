@@ -160,9 +160,9 @@ class StrongholdSchemaAdd(BaseModel):
 
 
 # Identity Schema
-class IdentitySchemaGet(BaseModel):
-  post_id: str
+class IdentitySchemaMatch(BaseModel):
   name: str
+  value: str
 
 # etc
 class CoordinateSchema(BaseModel):

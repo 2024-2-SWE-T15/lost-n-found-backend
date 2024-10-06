@@ -5,10 +5,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from ..model import Identity
 from ..schema import IdentitySchema
-from ..schema import IdentitySchemaGet
+from ..schema import IdentitySchemaMatch
 
 
-def get(db: Session, identity: IdentitySchemaGet):
+def get(db: Session, identity: IdentitySchema):
   db_item = db.query(Identity).filter(Identity.post_id == identity.post_id, Identity.name == identity.name).first()
   return db_item
 
@@ -30,3 +30,12 @@ def register(db: Session, identity: IdentitySchema):
   db.commit()
   db.refresh(db_item)
   return db_item
+
+def match(db: Session, identity: IdentitySchema):
+  db_item = db.query(Identity).filter(Identity.post_id == identity.post_id, Identity.name == identity.name).first()
+  if db_item:
+    db_item.value = identity.value
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+  return None
