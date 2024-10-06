@@ -26,9 +26,7 @@ async def getPost(post_id: str = Query(...),
   if not post:
     raise HTTPException(status_code=404, detail='Post not found')
   
-  post.tags = mysql_crud.tag_match.get(db, post_id)
   post.photos = mysql_crud.photo.get(db, post_id)
-  post.personal_idlist = mysql_crud.identity.getAll(db, post_id)
   return model2Dict(post)
 
 
@@ -124,3 +122,4 @@ async def deletePost(post_id: str,
 
 
 router.include_router(post_func.router)
+router.include_router(post_func.post_router)
