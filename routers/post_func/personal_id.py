@@ -31,3 +31,54 @@ async def matchIdentity(post_id: str,
     raise HTTPException(status_code=500, detail='Failed to match personal ID')
   
   return identity
+
+
+@router.post('/{identity_name}')
+async def registerIdentity(post_id: str,
+                           identity_name: str,
+                           value: str = Form(...),
+                           user: mysql_model.User = Depends(loadUser),
+                           db: Session = Depends(mysql_db.getDB)):
+  if not (post := mysql_crud.post.get(db, post_id)):
+    raise HTTPException(status_code=404, detail='Post not found')
+  
+  if post.user_id != user.id:
+    raise HTTPException(status_code=403, detail='Permission denied')
+
+  if not (identity := mysql_crud.identity.register(db, mysql_model.Identity(post_id=post_id, name=identity_name, value=value))):
+    raise HTTPException(status_code=500, detail='Failed to register personal ID')
+  
+  return identity
+
+@router.put('/{identity_name}')
+async def updateIdentity(post_id: str,
+                         identity_name: str,
+                         value: str = Form(...),
+                         user: mysql_model.User = Depends(loadUser),
+                         db: Session = Depends(mysql_db.getDB)):
+  if not (post := mysql_crud.post.get(db, post_id)):
+    raise HTTPException(status_code=404, detail='Post not found')
+  
+  if post.user_id != user.id:
+    raise HTTPException(status_code=403, detail='Permission denied')
+
+  if not (identity := mysql_crud.identity.match(db, mysql_model.Identity(post_id=post_id, name=identity_name, value=value))):
+    raise HTTPException(status_code=500, detail='Failed to update personal ID')
+  
+  return identity
+
+@router.delete('/{identity_name}')
+async def deleteIdentity(post_id: str,
+                         identity_name: str,
+                         user: mysql_model.User = Depends(loadUser),
+                         db: Session = Depends(mysql_db.getDB)):
+  if not (post := mysql_crud.post.get(db, post_id)):
+    raise HTTPException(status_code=404, detail='Post not found')
+  
+  if post.user_id != user.id:
+    raise HTTPException(status_code=403, detail='Permission denied')
+
+  if not mysql_crud.identity.delete(db, mysql_model.Identity(post_id=post_id, name=identity_name)):
+    raise HTTPException(status_code=500, detail='Failed to delete personal ID')
+  
+  return Response(status_code=204)
