@@ -46,6 +46,6 @@ async def deleteHashtag(post_id: str,
 
 
   if not mysql_crud.tag_match.delete(db, mysql_model.TagMatch(post_id=post_id, tag_name=tag_name)):
-    raise HTTPException(status_code=400, detail='Not matched tag')
+    raise HTTPException(status_code=404, detail='Tag not found')
   
   return Response(status_code=204)
