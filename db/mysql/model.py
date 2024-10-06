@@ -104,7 +104,7 @@ class Kept(Base):
   
 
 class PostView(Base):
-  __tablename__ = 'found_view'
+  __tablename__ = 'post_view'
   
   id = Column(String, primary_key=True, index=True)
   title = Column(String, nullable=False)
@@ -118,3 +118,4 @@ class PostView(Base):
   match_rank = Column(Integer, nullable=False)
   kept_coordinates = Column(Geometry(geometry_type='POINT', srid=4326), nullable=False)
   stronghold_id = Column(Integer, ForeignKey('strongholds.id'), nullable=False)
+  
