@@ -33,9 +33,9 @@ async def getPost(post_id: str = Query(...),
 
 
 @router.post('/')
-async def registerPost(postSchemaAdd: mysql_schema.PostSchemaAdd,
-                    user: mysql_model.User = Depends(loadUser),
-                    db: Session = Depends(mysql_db.getDB)):
+async def registerPost(postSchemaAdd: mysql_schema.PostSchemaAdd = Form(...),
+                        user: mysql_model.User = Depends(loadUser),
+                        db: Session = Depends(mysql_db.getDB)):
   if not postSchemaAdd.is_lost:
     if not postSchemaAdd.kept_coordinates and not postSchemaAdd.stronghold_id:
       raise HTTPException(status_code=400, detail='Invalid coordinates')
@@ -91,7 +91,7 @@ async def registerPost(postSchemaAdd: mysql_schema.PostSchemaAdd,
 
 @router.put('/{post_id}')
 async def updatePost(post_id: str,
-                     postSchemaUpdate: mysql_schema.PostSchemaUpdate,
+                     postSchemaUpdate: mysql_schema.PostSchemaUpdate = Form(...),
                      user: mysql_model.User = Depends(loadUser),
                      db: Session = Depends(mysql_db.getDB)):
   # not implemented perfectly
