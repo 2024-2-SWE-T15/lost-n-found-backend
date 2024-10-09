@@ -139,7 +139,7 @@ class PostSchemaUpdate(BaseModel):
   hashtags: Optional[dict[str, str]]
   description: Optional[str]
   photos: Optional[dict[str, str]]
-  personal_idlist: Optional[dict[str, Union[dict[str, str], str]]]
+  personal_idlist: Optional[dict[Union[dict[str, str], str], str]]
   
 class PostSchemaSearch(BaseModel):
   query: Optional[str] = ""
