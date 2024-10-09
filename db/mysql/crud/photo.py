@@ -11,7 +11,7 @@ def get(db: Session, photo_id: str):
   db_item = db.query(Photo).filter(Photo.id == photo_id).first()
   return db_item
 
-def get(db: Session, post_id: str):
+def getAll(db: Session, post_id: str):
   db_items = db.query(Photo).filter(Photo.post_id == post_id).all()
   return [db_item.id for db_item in db_items]
 
@@ -26,3 +26,13 @@ def register(db: Session, photo: PhotoSchema):
   db.commit()
   db.refresh(db_item)
   return db_item
+
+def delete(db: Session, photo_id: str):
+  db_item = db.query(Photo).filter(Photo.id == photo_id).first()
+  try:
+    db.delete(db_item)
+    db.commit()
+    return True
+  except SQLAlchemyError:
+    db.rollback()
+  return False

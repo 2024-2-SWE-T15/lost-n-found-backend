@@ -26,7 +26,6 @@ async def getPost(post_id: str = Query(...),
   if not post:
     raise HTTPException(status_code=404, detail='Post not found')
   
-  post.photos = mysql_crud.photo.get(db, post_id)
   return model2Dict(post)
 
 
