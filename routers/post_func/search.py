@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import pandas as pd
-from dotenv import load_dotenv
 from fuzzywuzzy import fuzz, process
 
 from fastapi import APIRouter, HTTPException, Depends, Query
@@ -17,8 +16,6 @@ from db.mysql import schema as mysql_schema
 
 from ..dependencies import loadUser
 
-
-load_dotenv("config/.env")
 
 router = APIRouter(prefix='/search', tags=['Post-Search'])
 

@@ -6,7 +6,8 @@ from sqlalchemy.orm import sessionmaker
 
 from .model import Base
 
-load_dotenv('config/.env')
+
+load_dotenv("config/.env")
 
 ID = os.getenv('MYSQL_ID')
 PW = os.getenv('MYSQL_PW')

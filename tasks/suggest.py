@@ -2,7 +2,6 @@ import os
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -14,8 +13,6 @@ from db.mysql import model as mysql_model
 from db.mysql import crud as mysql_crud
 from db.mysql import schema as mysql_schema
 
-
-load_dotenv('config/.env')
 
 FIRST_MATCH_RATE = float(os.getenv('FIRST_MATCH_RATE'))
 SECOND_MATCH_RATE = float(os.getenv('SECOND_MATCH_RATE'))

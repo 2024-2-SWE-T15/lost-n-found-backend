@@ -1,6 +1,5 @@
 import os
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -8,8 +7,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from ..model import Post
 from ..schema import PostSchema
 
-
-load_dotenv('config/.env')
 
 def get(db: Session, post_id: str):
   db_item = db.query(Post).filter(Post.id == post_id).first()

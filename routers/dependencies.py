@@ -1,7 +1,6 @@
 import os
 import httpx
 from datetime import timedelta
-from dotenv import load_dotenv
 
 from sqlalchemy.orm import Session
 
@@ -18,7 +17,6 @@ from db.mysql.database import SessionLocal, getDB
 from db.mysql.model import User
 
 
-load_dotenv('config/.env')
 
 PROTOCOL = os.getenv('PROTOCOL')
 HOST = os.getenv('HOST')
