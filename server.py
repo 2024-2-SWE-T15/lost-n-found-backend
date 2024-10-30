@@ -10,16 +10,18 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy.orm import Session
 
 import uvicorn
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Depends, Request, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from db.sqlite import database as sqlite_db
 from db.sqlite import crud as sqlite_crud
 
+from modules.utils import tokenReform
+
 from tasks import clear, update
 
-from routers.dependencies import getCurrentUser
+from routers.dependencies import verifyToken, refreshToken
 from routers import authenticator, postboard, coordinates
 
 load_dotenv("config/.env")
@@ -27,7 +29,7 @@ load_dotenv("config/.env")
 # scheduler
 krTZ = pytz.timezone('Asia/Seoul')
 scheduler = BackgroundScheduler(timezone=krTZ)
-scheduler.add_job(clear.clearForbiddenToken, 'interval', minutes=5, timezone=krTZ)
+# scheduler.add_job(clear.clearForbiddenToken, 'interval', minutes=5, timezone=krTZ)
 # scheduler.add_job(update.updateMatchRank, 'interval', minutes=30, timezone=krTZ)
 
 def start():
@@ -48,29 +50,51 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # middlewares
+# @app.middleware("http")
+# async def checkAccessToken(request: Request, call_next):
+#   flag = True
+#   if request.headers.get('Authorization'):
+#     token = request.headers.get('Authorization')
+#     _, access_token = token.split(' ', maxsplit=1)
+#     db = next(sqlite_db.getDB())
+#     if sqlite_crud.getInvalidAccessToken(db, access_token):
+#       try:
+#         del request.headers['Authorization']
+#       except KeyError:
+#         pass
+#     else:
+#       flag = False
+      
+#   if request.headers.get('Refresh-Token') and flag:
+#     try:
+#       del request.headers['Refresh-Token']
+#     except KeyError:
+#       pass
+  
+#   response = await call_next(request)
+#   return response
+
 @app.middleware("http")
 async def checkAccessToken(request: Request, call_next):
-  flag = True
-  if request.headers.get('Authorization'):
-    token = request.headers.get('Authorization')
-    _, access_token = token.split(' ', maxsplit=1)
-    db = next(sqlite_db.getDB())
-    if sqlite_crud.getInvalidAccessToken(db, access_token):
-      try:
-        del request.headers['Authorization']
-      except KeyError:
-        pass
-    else:
-      flag = False
+  access_token = None
+  if request.cookies.get('access-token'):
+    token = request.cookies.get('access-token')
+    provider, _ = token.split(' ')
+    
+    if not (token := await refreshToken(request, provider)):
+      response = Response(status_code=401, content='detail: Invalid Credentials')
+      response.delete_cookie('access-token')
+      response.delete_cookie(f'refresh-token-{provider}')
+      return response
+    
+    access_token = tokenReform(token, provider)['access_token']
       
-  if request.headers.get('Refresh-Token') and flag:
-    try:
-      del request.headers['Refresh-Token']
-    except KeyError:
-      pass
-  
   response = await call_next(request)
+  if access_token:
+    response.set_cookie(key="access-token", value=access_token, httponly=True, secure=True, samesite="None")
+  
   return response
+
 
 app.add_middleware(SessionMiddleware, secret_key=os.getenv('SECRET'))
 app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'])

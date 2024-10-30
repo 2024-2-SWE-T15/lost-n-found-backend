@@ -102,7 +102,7 @@ def dataURL2Img(data_url: str):
 def tokenReform(token: dict, provider: str):
   try:
     return {'access_token': f"{provider} {token['access_token']}",
-            'refresh_token': f"{provider} {token['refresh_token']}",
+            'refresh_token': f"{token['refresh_token']}",
             'token_type': 'Bearer'}
   except KeyError:
     pass

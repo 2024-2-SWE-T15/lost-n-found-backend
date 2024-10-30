@@ -12,15 +12,16 @@ from google.auth.transport import requests as google_requests
 from google.oauth2.id_token import verify_oauth2_token
 
 from modules import oauth2
+from modules.utils import tokenReform
 
 from db.mysql.database import SessionLocal, getDB
 from db.mysql.model import User
 
-
-
 PROTOCOL = os.getenv('PROTOCOL')
 HOST = os.getenv('HOST')
 # PORT = int(os.getenv('PORT'))
+
+platforms = ['google', 'kakao', 'naver']
 
 oauth = OAuth()
 
@@ -32,7 +33,7 @@ oauth.register(
   authorize_url='https://accounts.google.com/o/oauth2/auth',
   authorize_params={
     'access_type': 'offline',
-    'prompt': 'consent', # authorization prompt : request user consent every time, if not set, it requires refresh token
+    # 'prompt': 'consent', # authorization prompt : request user consent every time, if not set, it requires refresh token
   },
   access_token_url='https://accounts.google.com/o/oauth2/token',
   access_token_params={
@@ -79,22 +80,26 @@ oauth.register(
  
 
 async def verifyToken(request: Request):
-  if not (token := request.headers.get('Authorization')):
+  if not (token := request.cookies.get('access-token')):
     raise HTTPException(status_code=401, detail='Invalid Credentials')
-  # refresh_token = request.headers.get('Refresh-Token')
-  token_type, provider, access_token = token.split(' ')
+  
+  provider, access_token = token.split(' ')
   token = {'access_token': access_token, 
-          #  'refresh_token': refresh_token, 
-           'token_type': token_type}
+           'token_type': 'Bearer'}
   
   oauth_client = oauth.create_client(provider)
+  try:
+    userinfo = await oauth_client.userinfo(token=token)
+  except httpx.HTTPStatusError as e:
+    try:
+      userinfo = await oauth_client.userinfo(token=await refreshToken(request, provider))
+    except httpx.HTTPStatusError as e:
+      raise oauth2.convertHTTPException(e, provider)
   
   try:
-    return str(oauth2.getOpenID(await oauth_client.userinfo(token=token), provider)), provider
+    return str(oauth2.getOpenID(userinfo, provider)), provider
   except HTTPException as e:
     raise e
-  except httpx.HTTPStatusError as e:
-    raise oauth2.convertHTTPException(e, provider)
   except Exception as e:
     raise e
 
@@ -112,3 +117,11 @@ async def loadUser(user: User = Depends(getCurrentUser)):
   if not user:
     raise HTTPException(status_code=401, detail='Unauthorized access')
   return user
+
+
+async def refreshToken(request: Request, provider: str):
+  if not (refresh_token := request.cookies.get(f'refresh-token-{provider}')):
+    return None
+
+  oauth_client = oauth.create_client(provider)
+  return await oauth_client.fetch_access_token(refresh_token=refresh_token, grant_type='refresh_token',)
