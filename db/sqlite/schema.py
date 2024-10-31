@@ -4,8 +4,8 @@ from typing import Optional
 from datetime import datetime
 
 # DB Models
-class InvalidTokenSchema(BaseModel):
-  access_token: str
+class RefreshedTokenSchema(BaseModel):
+  refresh_token: str
   create_time: datetime
   
   class Config:
