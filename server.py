@@ -19,7 +19,7 @@ from db.sqlite import crud as sqlite_crud
 
 from modules.utils import tokenReform
 
-from tasks import clear, update
+from tasks import cache, update
 
 from routers.dependencies import verifyToken, refreshToken
 from routers import authenticator, postboard, coordinates
@@ -29,7 +29,7 @@ load_dotenv("config/.env")
 # scheduler
 krTZ = pytz.timezone('Asia/Seoul')
 scheduler = BackgroundScheduler(timezone=krTZ)
-scheduler.add_job(clear.clearTokenMemories, 'interval', minutes=5, timezone=krTZ)
+scheduler.add_job(cache.clearTokenMemories, 'interval', minutes=5, timezone=krTZ)
 # scheduler.add_job(update.updateMatchRank, 'interval', minutes=30, timezone=krTZ)
 
 def start():
@@ -80,6 +80,9 @@ async def checkAccessToken(request: Request, call_next):
   if request.cookies.get('access-token'):
     token = request.cookies.get('access-token')
     provider, _ = token.split(' ')
+    refresh_token = request.cookies.get(f'refresh-token-{provider}')
+    if cache.getTokenMemory(refresh_token):
+      return await call_next(request)
     
     if not (token := await refreshToken(request, provider)):
       response = Response(status_code=401, content='detail: Invalid Credentials')
@@ -92,6 +95,7 @@ async def checkAccessToken(request: Request, call_next):
   response = await call_next(request)
   if access_token:
     response.set_cookie(key="access-token", value=access_token, httponly=True, secure=True, samesite="None")
+    cache.addTokenMemory(refresh_token)
   
   return response
 

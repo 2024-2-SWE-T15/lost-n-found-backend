@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 # Table
-class InvalidToken(Base):
-  __tablename__ = 'invalid_tokens'
-  access_token = Column(String, primary_key=True, index=True)
+class RefreshedToken(Base):
+  __tablename__ = 'refreshed_tokens'
+  refresh_token = Column(String, primary_key=True, index=True)
   create_time = Column(DateTime, nullable=False, index=True)
