@@ -10,4 +10,11 @@ class RefreshedTokenSchema(BaseModel):
   
   class Config:
     from_attributes = True
-    
+
+class CSRFTokenSchema(BaseModel):
+  csrf_token: str
+  redirect_uri: str
+  create_time: datetime
+  
+  class Config:
+    from_attributes = True
