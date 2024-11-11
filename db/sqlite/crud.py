@@ -33,8 +33,8 @@ def clearRefreshedToken(db: Session):
   return True
 
 # CSRF Token CRUD
-def addCSRFToken(db: Session, csrf_token: str, redirect_uri: str):
-  dbItem = CSRFToken(csrf_token=csrf_token, redirect_uri=redirect_uri, create_time=datetime.now())
+def addCSRFToken(db: Session, csrf_token: str, redirect_url: str):
+  dbItem = CSRFToken(csrf_token=csrf_token, redirect_url=redirect_url, create_time=datetime.now())
   db.add(dbItem)
   db.commit()
   db.refresh(dbItem)

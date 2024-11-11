@@ -13,7 +13,7 @@ class RefreshedTokenSchema(BaseModel):
 
 class CSRFTokenSchema(BaseModel):
   csrf_token: str
-  redirect_uri: str
+  redirect_url: str
   create_time: datetime
   
   class Config:
