@@ -24,8 +24,6 @@ def getTokenMemory(refresh_token: str):
   finally:
     db.close()
 
-
-
 def clearTokenMemories():
   SessionLocal = sqlite_db.initDB()
   db: Session = SessionLocal()
@@ -33,4 +31,12 @@ def clearTokenMemories():
     sqlite_crud.clearRefreshedToken(db)
   finally:
     db.close()
-  
+
+
+def clearCSRFToken():
+  SessionLocal = sqlite_db.initDB()
+  db: Session = SessionLocal()
+  try:
+    sqlite_crud.clearCSRFToken(db)
+  finally:
+    db.close()

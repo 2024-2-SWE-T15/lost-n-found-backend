@@ -30,6 +30,7 @@ load_dotenv("config/.env")
 krTZ = pytz.timezone('Asia/Seoul')
 scheduler = BackgroundScheduler(timezone=krTZ)
 scheduler.add_job(cache.clearTokenMemories, 'interval', minutes=5, timezone=krTZ)
+scheduler.add_job(cache.clearCSRFToken, 'interval', minutes=3, timezone=krTZ)
 # scheduler.add_job(update.updateMatchRank, 'interval', minutes=30, timezone=krTZ)
 
 def start():
@@ -91,6 +92,7 @@ async def checkAccessToken(request: Request, call_next):
       return response
     
     access_token = tokenReform(token, provider)['access_token']
+    request.cookies['access-token'] = access_token
       
   response = await call_next(request)
   if access_token:
