@@ -47,6 +47,16 @@ def getCSRFToken(db: Session, csrf_token: str):
 def getAllCSRFToken(db: Session):
   return db.query(CSRFToken).all()
 
+def removeCSRFToken(db: Session, csrf_token: str):
+  dbItem = db.query(CSRFToken).filter(CSRFToken.csrf_token == csrf_token).first()
+  try:
+    db.delete(dbItem)
+    db.commit()
+  except SQLAlchemyError:
+    db.rollback()
+    return False
+  return True
+
 def clearCSRFToken(db: Session):
   dbItems = db.query(CSRFToken).filter(CSRFToken.create_time < datetime.now() - timedelta(minutes=15)).all()
   for item in dbItems:
@@ -57,3 +67,4 @@ def clearCSRFToken(db: Session):
       db.rollback()
       pass
   return True
+
