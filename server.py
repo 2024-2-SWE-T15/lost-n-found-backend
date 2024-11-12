@@ -19,7 +19,7 @@ from db.sqlite import crud as sqlite_crud
 
 from modules.utils import tokenReform
 
-from tasks import cache, update
+from tasks import alert, cache, update
 
 from routers.dependencies import verifyToken, refreshToken
 from routers import authenticator, postboard, coordinates
@@ -115,6 +115,12 @@ app.include_router(postboard.router)
 @app.get("/")
 async def root():
   return {"message": "Hello World"}
+
+@app.get("/test")
+async def test():
+  if alert.send_alert("ekfzkr@kakao.com"):
+    return Response(status_code=204)
+  return Response(status_code=500)
 
 
 if __name__ == '__main__':
