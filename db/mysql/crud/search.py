@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from geoalchemy2 import WKTElement
 
+from modules.utils import point2Tuple, tuple2PointString
+
 from ..model import Hashtag, Post, TagMatch
-from ..schema import PostSchemaSearch
+from ..schema import PostSchemaSearch, CoordinateSchema
 
 
 def get(db: Session, search: PostSchemaSearch):
@@ -20,7 +22,15 @@ def get(db: Session, search: PostSchemaSearch):
   if search.coordinates:
     distance = search.distance if search.distance else 50.0
     query = query.filter(
-      func.ST_Distance_Sphere(Post.coordinates, WKTElement(search.coordinates, srid=4326)) <= search.distance
+      func.ST_Distance_Sphere(Post.coordinates, WKTElement(tuple2PointString(search.coordinates), srid=4326)) <= search.distance
     )
+  db_items = query.all()
+  return db_items
+
+def getByCoordinates(db: Session, coordinates: tuple[float, float], distance: float):
+  query = db.query(Post).filter(Post.valid == True)
+  query = query.filter(
+    func.ST_Distance_Sphere(Post.coordinates, WKTElement(tuple2PointString(coordinates), srid=4326)) <= distance
+  )
   db_items = query.all()
   return db_items

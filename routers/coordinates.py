@@ -1,7 +1,6 @@
 import os
-from dotenv import load_dotenv
 
-from fastapi import APIRouter, Depends, Request, Response, HTTPException
+from fastapi import APIRouter, Depends, Request, Response, HTTPException, Query
 
 from sqlalchemy.orm import Session
 
@@ -15,27 +14,19 @@ from db.mysql import schema as mysql_schema
 from .dependencies import getCurrentUser
 from .coordinates_func import router as func_routers
 
-router = APIRouter(prefix='/lostnfound', tags=['LostNFound'])
 
+router = APIRouter(prefix='/marker', tags=['Marker'])
 
 @router.get('/')
-async def getCoordinates(
+async def getCoordinates(lng: float = Query(...), 
+                         lat: float = Query(...),
+                         distance: float = Query(...),
                          db: Session = Depends(mysql_db.getDB)):
-    
-    
-    item = mysql_crud.stronghold.get(db, '1')
-    print(type(item.coordinates))
+  
+  items = mysql_crud.search.getByCoordinates(db, (lng, lat), distance)
+  for item in items:
     item.coordinates = point2Tuple(item.coordinates)
-    print(type(item.coordinates))
-    print("{:.7f} {:.7f}".format(item.coordinates[0], item.coordinates[1]))
-    zone = convertTuple2Zone(item.coordinates, gap=0.00002)
-    print("{:.7f} {:.7f}".format(zone[0], zone[1]))
-    
-    # items = mysql_crud.stronghold.withinDistance(db, mysql_schema.CoordinateSchema(coordinates=(37.7749, -122.41942), distance=10))
-    # # items[0].coordinates = point2Tuple(items[0].coordinates)
-    # print(type(items[0].coordinates))
-    
-    return zone
-
+  
+  return items
 
 router.include_router(func_routers)
