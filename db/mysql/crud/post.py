@@ -35,7 +35,8 @@ def register(db: Session, post: PostSchema):
     coordinates=post.coordinates,
     description=post.description,
     create_time=datetime.now(),
-    is_lost=post.is_lost
+    is_lost=post.is_lost,
+    match_rank=1
   )
   db.add(db_item)
   db.commit()
