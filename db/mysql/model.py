@@ -103,8 +103,8 @@ class Kept(Base):
   stronghold = relationship('Stronghold', back_populates='kept')
   
 
-class PostView(Base):
-  __tablename__ = 'post_view'
+class FoundView(Base):
+  __tablename__ = 'found_view'
   
   id = Column(String, primary_key=True, index=True)
   title = Column(String, nullable=False)

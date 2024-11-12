@@ -120,16 +120,23 @@ class UserSchemaUpdate(BaseModel):
 
 
 # Post Schema
-class PostSchemaAdd(BaseModel):
+class PostSchemaAddLost(BaseModel):
   title: str
   coordinates: tuple[float, float]
-  kept_coordinates: Optional[tuple[Optional[float], Optional[float]]]
-  stronghold_id: Optional[int]
-  hashtags: list[str]
+  hashtags: list[str] = []
   description: str
-  photos: list[str]
-  personal_idlist: Optional[dict[str, str]]
-  is_lost: bool
+  photos: list[str] = []
+  personal_idlist: Optional[dict[str, str]] = {}
+
+class PostSchemaAddFound(BaseModel):
+  title: str
+  coordinates: tuple[float]
+  kept_coordinates: tuple[float, float]
+  stronghold_id: Optional[int]
+  hashtags: list[str] = []
+  description: str
+  photos: list[str] = []
+  personal_idlist: Optional[dict[str, str]] = {}
 
 class PostSchemaUpdate(BaseModel):
   title: Optional[str]
