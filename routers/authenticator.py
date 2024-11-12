@@ -107,7 +107,6 @@ async def authCallback(request: Request, provider: str,
   try:
     sqlite_crud.removeCSRFToken(sqlite_db, csrf_state.csrf_token)
   except Exception as e:
-    print(e)
     pass
   
   return response
