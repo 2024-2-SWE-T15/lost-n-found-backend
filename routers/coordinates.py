@@ -18,12 +18,14 @@ from .coordinates_func import router as func_routers
 router = APIRouter(prefix='/marker', tags=['Marker'])
 
 @router.get('/')
-async def getCoordinates(lng: float = Query(...), 
-                         lat: float = Query(...),
+async def getCoordinates(lat: float = Query(...), 
+                         lng: float = Query(...),
                          distance: float = Query(...),
                          db: Session = Depends(mysql_db.getDB)):
+  if lat < -90 or lat > 90 or lng < -180 or lng > 180:
+    raise HTTPException(status_code=400, detail='Invalid coordinates')
   
-  items = mysql_crud.search.getByCoordinates(db, (lng, lat), distance)
+  items = mysql_crud.search.getByCoordinates(db, (lat, lng), distance)
   for item in items:
     item.coordinates = point2Tuple(item.coordinates)
   
