@@ -49,7 +49,8 @@ async def registerLostPost(postSchemaAdd: mysql_schema.PostSchemaAddLost,
     if not (tag := mysql_crud.hashtag.get(db, hashtag)):
       tag = mysql_crud.hashtag.register(db, hashtag)
     
-    if tag_match := mysql_crud.tag_match.register(db, mysql_model.TagMatch(post_id=post.id, tag_name=tag.name)):
+    if not hashtag in mysql_crud.tag_match.getAll(db, post.id) and \
+      (tag_match := mysql_crud.tag_match.register(db, mysql_model.TagMatch(post_id=post.id, tag_name=tag.name))):
       tag = mysql_crud.hashtag.update(db, tag.name)
   
   # photos
@@ -105,7 +106,8 @@ async def registerFoundPost(postSchemaAdd: mysql_schema.PostSchemaAddFound,
     if not (tag := mysql_crud.hashtag.get(db, hashtag)):
       tag = mysql_crud.hashtag.register(db, hashtag)
     
-    if tag_match := mysql_crud.tag_match.register(db, mysql_model.TagMatch(post_id=post.id, tag_name=tag.name)):
+    if not hashtag in mysql_crud.tag_match.getAll(db, post.id) and \
+      (tag_match := mysql_crud.tag_match.register(db, mysql_model.TagMatch(post_id=post.id, tag_name=tag.name))):
       tag = mysql_crud.hashtag.update(db, tag.name)
   
   # photos
