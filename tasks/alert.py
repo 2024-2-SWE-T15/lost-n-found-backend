@@ -47,7 +47,7 @@ def create_email_template(receiver_name, content):
   return html
 
 def createPostLink(post_id, post_title, post_time):
-  host = os.getenv("HOST")
+  host = os.getenv("FRONT_HOST")
   return f'<a href="https://{host}/post/{post_id}">{post_title}</a> ({post_time})<br>'
 
 def send_email(receiver_email, subject, body):
