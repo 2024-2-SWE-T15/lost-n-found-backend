@@ -10,6 +10,7 @@ class UserSchema(BaseModel):
   profile_image_url: Optional[str]
   create_time: datetime
   update_time: Optional[datetime]
+  email: Optional[str]
   
   class Config:
     from_attributes = True
@@ -109,6 +110,7 @@ class UserSchemaAdd(BaseModel):
   platform: str
   nickname: str
   profile_image_url: Optional[str]
+  email: Optional[str]
 
 class UserSchemaGet(BaseModel):
   id: str
@@ -117,6 +119,7 @@ class UserSchemaGet(BaseModel):
 class UserSchemaUpdate(BaseModel):
   nickname: Optional[str]
   profile_image_url: Optional[str]
+  email: Optional[str]
 
 
 # Post Schema

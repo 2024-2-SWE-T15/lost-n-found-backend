@@ -89,7 +89,8 @@ async def authCallback(request: Request, provider: str,
   if not (user := mysql_crud.user.get(db, mysql_model.User(id=oauth2.getOpenID(userinfo, provider), platform=provider))):
     user = mysql_crud.user.register(db, mysql_model.User(id=oauth2.getOpenID(userinfo, provider), platform=provider, 
                                                             nickname=oauth2.getNickname(userinfo, provider), 
-                                                            profile_image_url=oauth2.getProfileImageURL(userinfo, provider)))
+                                                            profile_image_url=oauth2.getProfileImageURL(userinfo, provider),
+                                                            email=None))
   else:
     user = mysql_crud.user.update(db, mysql_model.User(id=oauth2.getOpenID(userinfo, provider), platform=provider,
                                                       profile_image_url=oauth2.getProfileImageURL(userinfo, provider)))

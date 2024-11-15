@@ -13,7 +13,8 @@ def register(db: Session, user: UserSchemaAdd):
   db_item = User(id=user.id, platform=user.platform, 
                 nickname=user.nickname, 
                 profile_image_url=user.profile_image_url, 
-                create_time=datetime.now())
+                create_time=datetime.now(),
+                email=user.email)
   db.add(db_item)
   db.commit()
   db.refresh(db_item)
@@ -29,6 +30,8 @@ def update(db: Session, user: UserSchema):
     db_item.nickname = user.nickname
   if user.profile_image_url:
     db_item.profile_image_url = user.profile_image_url
+  if user.email:
+    db_item.email = user.email
   db_item.update_time = datetime.now()
   db.commit()
   db.refresh(db_item)

@@ -17,6 +17,7 @@ class User(Base):
   profile_image_url = Column(String, nullable=True)
   create_time = Column(DateTime, nullable=False)
   update_time = Column(DateTime, nullable=True)
+  email = Column(String, nullable=True)
 
   post = relationship('Post', back_populates='user')
 
