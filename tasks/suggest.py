@@ -13,6 +13,7 @@ from db.mysql import model as mysql_model
 from db.mysql import crud as mysql_crud
 from db.mysql import schema as mysql_schema
 
+from .alert import send_alert
 
 FIRST_MATCH_RATE = float(os.getenv('FIRST_MATCH_RATE'))
 SECOND_MATCH_RATE = float(os.getenv('SECOND_MATCH_RATE'))
@@ -83,7 +84,20 @@ async def suggestion(altered_posts: list[str], is_lost=True):
     ].index, inplace=True)
     
     # alert user
+    target_df = score_df[['post_id_lost']]
+    receivers = {}
+    for _, row in target_df.iterrows():
+      post = mysql_crud.post.get(db, row)
+      user = mysql_crud.user.get(db, mysql_model.User(id=post.user_id))
+      if user and user.email:
+        if user.id not in receivers:
+          receivers[user.id] = (user, [])
+        
+        receivers[user.id][1].append((post.id, post.title, post.update_time if post.update_time else post.create_time))
+    
+    for _, (user, posts) in receivers.items():
+      for post in posts:
+        send_alert(user.email, user.nickname, post)
     
   finally:
     db.close()
-    
