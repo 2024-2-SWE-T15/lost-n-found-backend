@@ -31,6 +31,14 @@ def getProfileImageURL(response, provider: str) -> str:
     return response['response']['profile_image']
   else:
     raise HTTPException(status_code=501, detail='Not implemented provider')
+  
+def getEmailAddress(response, provider: str) -> str:
+  if provider == 'google':
+    return response['email']
+  elif provider == 'kakao':
+    return None
+  elif provider == 'naver':
+    return response['response']['email']
 
 def convertHTTPException(e: Exception, provider: str) -> HTTPException:
   if provider == 'google':
