@@ -20,7 +20,7 @@ from db.sqlite import database as sqlite_db
 from db.sqlite import crud as sqlite_crud
 from db.sqlite import model as sqlite_model
 
-from .dependencies import oauth, loadUser, verifyToken, refreshToken
+from .dependencies import oauth, loadUser, verifyToken, refreshToken, unlink
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
 
@@ -85,12 +85,12 @@ async def authCallback(request: Request, provider: str,
     userinfo = await oauth_client.userinfo(token=token)
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
-
+  print(userinfo)
   if not (user := mysql_crud.user.get(db, mysql_model.User(id=oauth2.getOpenID(userinfo, provider), platform=provider))):
     user = mysql_crud.user.register(db, mysql_model.User(id=oauth2.getOpenID(userinfo, provider), platform=provider, 
                                                             nickname=oauth2.getNickname(userinfo, provider), 
                                                             profile_image_url=oauth2.getProfileImageURL(userinfo, provider),
-                                                            email=None))
+                                                            email=oauth2.getEmailAddress(userinfo, provider)))
   else:
     user = mysql_crud.user.update(db, mysql_model.User(id=oauth2.getOpenID(userinfo, provider), platform=provider,
                                                       profile_image_url=oauth2.getProfileImageURL(userinfo, provider)))
@@ -109,6 +109,7 @@ async def authCallback(request: Request, provider: str,
     sqlite_crud.removeCSRFToken(sqlite_db, csrf_state.csrf_token)
   except Exception as e:
     pass
+  request.session.clear()
   
   return response
 
@@ -117,7 +118,7 @@ async def authCallback(request: Request, provider: str,
 async def updateUserInfo(userSchemaUpdate: mysql_schema.UserSchemaUpdate,
                          db: Session = Depends(mysql_db.getDB),
                          user: mysql_model.User = Depends(loadUser)):
-  user = mysql_crud.user.update(db, mysql_model.User(user.id, userSchemaUpdate.nickname, userSchemaUpdate.profile_image_url))
+  user = mysql_crud.user.update(db, mysql_model.User(user.id, userSchemaUpdate.nickname, userSchemaUpdate.profile_image_url, userSchemaUpdate.email))
   if not user:
     raise HTTPException(status_code=500, detail='Failed to update user')
   return user
@@ -129,6 +130,22 @@ async def logout(request: Request,
                  user: mysql_model.User = Depends(loadUser)):
   response = Response(status_code=204)
   response.delete_cookie('access-token')
+  response.delete_cookie(f'refresh-token-{user.platform}')
+  return response
+
+@router.delete("/withdrawal")
+async def withdrawal(request: Request,
+                     db: Session = Depends(mysql_db.getDB),
+                     user: mysql_model.User = Depends(loadUser)):
+  r = await unlink(request)
+  if r and r.get('result') != 'success':
+    raise HTTPException(status_code=500, detail='Failed to unlink user')
+  
+  if not mysql_crud.user.delete(db, user):
+    raise HTTPException(status_code=500, detail='Failed to delete user')
+  response = Response(status_code=204)
+  response.delete_cookie('access-token')
+  response.delete_cookie(f'refresh-token-{user.platform}')
   return response
 
 

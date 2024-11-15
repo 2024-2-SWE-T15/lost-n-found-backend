@@ -37,4 +37,11 @@ def update(db: Session, user: UserSchema):
   db.refresh(db_item)
   return db_item
 
-
+def delete(db: Session, user: UserSchemaGet):
+  try:
+    db.query(User).filter(User.id == user.id, User.platform == user.platform).delete()
+    db.commit()
+    return True
+  except SQLAlchemyError as e:
+    db.rollback()
+    return False
