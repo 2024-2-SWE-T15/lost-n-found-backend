@@ -118,9 +118,9 @@ async def root():
 
 @app.get("/test")
 async def test():
-  if alert.send_alert("ekfzkr@kakao.com"):
-    return Response(status_code=204)
-  return Response(status_code=500)
+  # if alert.send_alert("ekfzkr@kakao.com", "주현", [("03160742-7b9a-4266-ab12-ac7163d75df2", "잃어버린 린스, 어디에 있을까요? 도움이 필요해요!", "2024-11-14 03:01:57")]):
+  #   return Response(status_code=204)
+  return Response(status_code=400)
 
 
 if __name__ == '__main__':
