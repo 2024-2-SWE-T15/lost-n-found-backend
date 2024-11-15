@@ -71,7 +71,7 @@ def send_email(receiver_email, subject, body):
   
   return True
   
-def send_alert(receiver_email, content):
+def send_alert(receiver_email, receiver_name, items):
   subject = "분실물 발견 추정 알림"
   content = create_email_template("홍길동", "청소기")
   
