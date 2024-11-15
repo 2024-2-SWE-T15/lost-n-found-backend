@@ -12,7 +12,6 @@ def create_email_template(receiver_name, content):
       logo = f.read()
   except:
     pass
-  print(logo)
   html = f'''
   <html>
   <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f2f2f2;">
@@ -47,6 +46,10 @@ def create_email_template(receiver_name, content):
   '''
   return html
 
+def createPostLink(post_id, post_title, post_time):
+  host = os.getenv("HOST")
+  return f'<a href="https://{host}/post/{post_id}">{post_title}</a> ({post_time})<br>'
+
 def send_email(receiver_email, subject, body):
   message = MIMEMultipart()
   message["From"] = os.getenv("SMTP_ID")
@@ -57,7 +60,6 @@ def send_email(receiver_email, subject, body):
   try:
     server = smtplib.SMTP(os.getenv("SMTP_HOST"), os.getenv("SMTP_TLS_PORT"))
     server.starttls()
-    print(os.getenv("SMTP_ID"), os.getenv("SMTP_PW"))
     server.login(os.getenv("SMTP_ID"), os.getenv("SMTP_PW"))
     
     # send email
@@ -72,8 +74,8 @@ def send_email(receiver_email, subject, body):
   return True
   
 def send_alert(receiver_email, receiver_name, items):
-  subject = "분실물 발견 추정 알림"
-  content = create_email_template("홍길동", "청소기")
+  subject = f"[찾을수있을지도] 분실물 발견 추정 알림 ({len(items)})"
+  content = create_email_template(receiver_name, "".join([createPostLink(item[0], item[1], item[2]) for item in items]))
   
   return send_email(receiver_email, subject, content)
 
