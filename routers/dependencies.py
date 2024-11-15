@@ -60,6 +60,7 @@ oauth.register(
   # redirect_uri=f'{PROTOCOL}://{HOST}:{PORT}/auth/kakao/callback',
   redirect_uri=f'{PROTOCOL}://{HOST}/auth/kakao/callback',
   userinfo_endpoint='https://kapi.kakao.com/v2/user/me',
+  revoke_token_url='https://kapi.kakao.com/v1/user/unlink',
   client_kwargs={'scope': 'openid, profile_nickname, profile_image'}
 )
 
@@ -77,8 +78,13 @@ oauth.register(
   userinfo_endpoint='https://openapi.naver.com/v1/nid/me',
   client_kwargs={'scope': 'profile'}
 )
- 
 
+
+async def getToken(request: Request):
+  if not (token := request.cookies.get('access-token')):
+    raise HTTPException(status_code=401, detail='Invalid Credentials')
+  return token.split(' ')
+  
 async def verifyToken(request: Request):
   if not (token := request.cookies.get('access-token')):
     raise HTTPException(status_code=401, detail='Invalid Credentials')
@@ -124,4 +130,20 @@ async def refreshToken(request: Request, provider: str):
     return None
 
   oauth_client = oauth.create_client(provider)
-  return await oauth_client.fetch_access_token(refresh_token=refresh_token, grant_type='refresh_token',)
+  return await oauth_client.fetch_access_token(client_id=oauth_client.client_id, 
+                                               client_secret=oauth_client.client_secret,
+                                               refresh_token=refresh_token, 
+                                               grant_type='refresh_token',)
+
+async def unlink(request: Request):
+  provider, access_token = await getToken(request)
+  oauth_client = oauth.create_client(provider)
+  
+  response = None
+  if provider == 'naver':
+    response = await oauth_client.fetch_access_token(client_id=oauth_client.client_id, 
+                                                      client_secret=oauth_client.client_secret,
+                                                      access_token=access_token,
+                                                      grant_type='delete',)
+
+  return response
