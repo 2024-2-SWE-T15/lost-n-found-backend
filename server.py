@@ -54,7 +54,6 @@ app = FastAPI(lifespan=lifespan)
 @app.middleware("http")
 async def checkAccessToken(request: Request, call_next):
   access_token = None
-  print(request.session)
   if request.session.get('access-token'):
     token = request.session.get('access-token')
     provider, _ = token.split(' ')
