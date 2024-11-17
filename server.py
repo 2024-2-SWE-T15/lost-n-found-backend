@@ -50,34 +50,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# middlewares
-# @app.middleware("http")
-# async def checkAccessToken(request: Request, call_next):
-#   flag = True
-#   if request.headers.get('Authorization'):
-#     token = request.headers.get('Authorization')
-#     _, access_token = token.split(' ', maxsplit=1)
-#     db = next(sqlite_db.getDB())
-#     if sqlite_crud.getInvalidAccessToken(db, access_token):
-#       try:
-#         del request.headers['Authorization']
-#       except KeyError:
-#         pass
-#     else:
-#       flag = False
-      
-#   if request.headers.get('Refresh-Token') and flag:
-#     try:
-#       del request.headers['Refresh-Token']
-#     except KeyError:
-#       pass
-  
-#   response = await call_next(request)
-#   return response
 
 @app.middleware("http")
 async def checkAccessToken(request: Request, call_next):
   access_token = None
+  print(request.session)
   if request.session.get('access-token'):
     token = request.session.get('access-token')
     provider, _ = token.split(' ')
