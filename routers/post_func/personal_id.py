@@ -16,7 +16,7 @@ router = APIRouter(prefix='/personal_id', tags=['Post-Personal-ID'])
 @router.get('/')
 async def getIdentityList(post_id: str,
                         db: Session = Depends(mysql_db.getDB)):
-  identity_list = mysql_crud.identity.getAll(db, post_id)
+  identity_list: list[mysql_model.Identity] = mysql_crud.identity.getAll(db, post_id)
   return [identity.name for identity in identity_list]
 
 
