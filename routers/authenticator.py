@@ -85,7 +85,7 @@ async def authCallback(request: Request, provider: str,
     userinfo = await oauth_client.userinfo(token=token)
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
-  print(userinfo)
+  
   if not (user := mysql_crud.user.get(db, mysql_model.User(id=oauth2.getOpenID(userinfo, provider), platform=provider))):
     user = mysql_crud.user.register(db, mysql_model.User(id=oauth2.getOpenID(userinfo, provider), platform=provider, 
                                                             nickname=oauth2.getNickname(userinfo, provider), 

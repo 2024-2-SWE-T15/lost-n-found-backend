@@ -112,7 +112,6 @@ if __name__ == "__main__":
   try:
     for i in range(70):
       post = generator.generate()
-      print(i, post['title'])
       pushPost(mysql_model.Post(title=post['title'],
                                 user_id="110467447451800603165",
                                 coordinates=randomCoordinate((37.295346404935195, 126.97159007969412), 500),

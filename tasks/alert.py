@@ -66,7 +66,7 @@ def send_email(receiver_email, subject, body):
     
     server.sendmail(os.getenv("SMTP_ID"), receiver_email, message.as_string())
   except Exception as e:
-    print(f"Failed to send email: {e}")
+    # print(f"Failed to send email: {e}")
     return False
   finally:
     server.quit()
