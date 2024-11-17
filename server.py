@@ -65,10 +65,8 @@ async def checkAccessToken(request: Request, call_next):
     
     if not (token := await refreshToken(request, provider)):
       response = Response(status_code=401, content='detail: Invalid Credentials')
-      if request.session.get('access-token'):
-        del request.session['access-token']
-      if request.session.get(f'refresh-token-{provider}'):
-        del request.session[f'refresh-token-{provider}']
+      request.session.pop('access-token', None)
+      request.session.pop(f'refresh-token-{provider}', None)
       
       # response.delete_cookie('access-token')
       # response.delete_cookie(f'refresh-token-{provider}')
