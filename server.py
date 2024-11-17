@@ -78,32 +78,47 @@ app = FastAPI(lifespan=lifespan)
 @app.middleware("http")
 async def checkAccessToken(request: Request, call_next):
   access_token = None
-  if request.cookies.get('access-token'):
-    token = request.cookies.get('access-token')
+  if request.session.get('access-token'):
+    token = request.session.get('access-token')
     provider, _ = token.split(' ')
-    refresh_token = request.cookies.get(f'refresh-token-{provider}')
+    refresh_token = request.session.get(f'refresh-token-{provider}')
+    
     if cache.getTokenMemory(refresh_token):
       return await call_next(request)
     
     if not (token := await refreshToken(request, provider)):
       response = Response(status_code=401, content='detail: Invalid Credentials')
-      response.delete_cookie('access-token')
-      response.delete_cookie(f'refresh-token-{provider}')
+      if request.session.get('access-token'):
+        del request.session['access-token']
+      if request.session.get(f'refresh-token-{provider}'):
+        del request.session[f'refresh-token-{provider}']
+      
+      # response.delete_cookie('access-token')
+      # response.delete_cookie(f'refresh-token-{provider}')
       return response
     
     access_token = tokenReform(token, provider)['access_token']
-    request.cookies['access-token'] = access_token
-      
+    request.session['access-token'] = access_token
+  
   response = await call_next(request)
   if access_token:
-    response.set_cookie(key="access-token", value=access_token, httponly=True, secure=True, samesite="None")
+    # response.set_cookie(key="access-token", value=access_token, httponly=True, secure=True, samesite="None")
+    request.session['access-token'] = access_token
     cache.addTokenMemory(refresh_token)
   
   return response
 
 
-app.add_middleware(SessionMiddleware, secret_key=os.getenv('SECRET'))
-app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
+# app.add_middleware(SessionMiddleware, secret_key=os.getenv('SECRET'))
+app.add_middleware(SessionMiddleware, 
+                   secret_key=os.getenv('SECRET'),
+                   https_only=True,
+                   same_site='None',)
+app.add_middleware(CORSMiddleware, 
+                   allow_origins=['*'], 
+                   allow_credentials=True, 
+                   allow_methods=['*'], 
+                   allow_headers=['*'])
 
 # routers
 app.include_router(authenticator.router)
@@ -120,7 +135,7 @@ async def root():
 async def test():
   # if alert.send_alert("ekfzkr@kakao.com", "주현", [("03160742-7b9a-4266-ab12-ac7163d75df2", "잃어버린 린스, 어디에 있을까요? 도움이 필요해요!", "2024-11-14 03:01:57")]):
   #   return Response(status_code=204)
-  return Response(status_code=400)
+  return Response(status_code=404)
 
 
 if __name__ == '__main__':

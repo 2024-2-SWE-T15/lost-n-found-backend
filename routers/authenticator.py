@@ -73,7 +73,7 @@ async def authCallback(request: Request, provider: str,
     raise HTTPException(status_code=400, detail='Invalid state')
   
   oauth_client = oauth.create_client(provider)
-  if request.cookies.get(f'refresh-token-{provider}'):
+  if request.session.get(f'refresh-token-{provider}'):
     token = await refreshToken(request, provider)
   else:
     try:
@@ -101,15 +101,17 @@ async def authCallback(request: Request, provider: str,
   # response = Response(status_code=200, content="Login success")
   response = RedirectResponse(url=csrf_state.redirect_url)
   
-  response.set_cookie(key="access-token", value=token['access_token'], httponly=True, secure=True, samesite="None")
+  # response.set_cookie(key="access-token", value=token['access_token'], httponly=True, secure=True, samesite="None")
+  request.session['access-token'] = token['access_token']
   if 'refresh_token' in token:
-    response.set_cookie(key=f"refresh-token-{provider}", value=token['refresh_token'], httponly=True, secure=True, samesite="None")
+    # response.set_cookie(key=f"refresh-token-{provider}", value=token['refresh_token'], httponly=True, secure=True, samesite="None")
+    request.session[f"refresh-token-{provider}"] = token['refresh_token']
+  
   
   try:
     sqlite_crud.removeCSRFToken(sqlite_db, csrf_state.csrf_token)
   except Exception as e:
     pass
-  request.session.clear()
   
   return response
 
@@ -129,8 +131,12 @@ async def logout(request: Request,
                  db: Session = Depends(sqlite_db.getDB),
                  user: mysql_model.User = Depends(loadUser)):
   response = Response(status_code=204)
-  response.delete_cookie('access-token')
-  response.delete_cookie(f'refresh-token-{user.platform}')
+  if request.session.get('access-token'):
+    del request.session['access-token']
+  if request.session.get(f'refresh-token-{user.platform}'):
+    del request.session[f'refresh-token-{user.platform}']
+  # response.delete_cookie('access-token')
+  # response.delete_cookie(f'refresh-token-{user.platform}')
   return response
 
 @router.delete("/withdrawal")
@@ -143,9 +149,14 @@ async def withdrawal(request: Request,
   
   if not mysql_crud.user.delete(db, user):
     raise HTTPException(status_code=500, detail='Failed to delete user')
+  
   response = Response(status_code=204)
-  response.delete_cookie('access-token')
-  response.delete_cookie(f'refresh-token-{user.platform}')
+  if request.session.get('access-token'):
+    del request.session['access-token']
+  if request.session.get(f'refresh-token-{user.platform}'):
+    del request.session[f'refresh-token-{user.platform}']
+  # response.delete_cookie('access-token')
+  # response.delete_cookie(f'refresh-token-{user.platform}')
   return response
 
 

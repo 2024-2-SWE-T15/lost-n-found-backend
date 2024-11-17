@@ -81,12 +81,12 @@ oauth.register(
 
 
 async def getToken(request: Request):
-  if not (token := request.cookies.get('access-token')):
+  if not (token := request.session.get('access-token')):
     raise HTTPException(status_code=401, detail='Invalid Credentials')
   return token.split(' ')
   
 async def verifyToken(request: Request):
-  if not (token := request.cookies.get('access-token')):
+  if not (token := request.session.get('access-token')):
     raise HTTPException(status_code=401, detail='Invalid Credentials')
   
   provider, access_token = token.split(' ')
@@ -126,7 +126,7 @@ async def loadUser(user: User = Depends(getCurrentUser)):
 
 
 async def refreshToken(request: Request, provider: str):
-  if not (refresh_token := request.cookies.get(f'refresh-token-{provider}')):
+  if not (refresh_token := request.session.get(f'refresh-token-{provider}')):
     return None
 
   oauth_client = oauth.create_client(provider)
