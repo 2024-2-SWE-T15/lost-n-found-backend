@@ -8,7 +8,7 @@ from geoalchemy2 import WKTElement
 from modules.utils import haversineDistance, haversineSquare, tuple2PointString
 
 from ..model import Stronghold
-from ..schema import StrongholdSchema
+from ..schema import StrongholdSchema, StrongholdSchemaAdd
 from ..schema import CoordinateSchema
 
 
@@ -19,7 +19,7 @@ def get(db: Session, stronghold_id: str):
 def post(db: Session, stronghold: StrongholdSchema):
   db_item = Stronghold(
     name=stronghold.name,
-    coordinates=stronghold.coordinates,
+    coordinates=WKTElement(tuple2PointString(stronghold.coordinates), srid=4326),
     description=stronghold.description,
   )
   db.add(db_item)
@@ -27,9 +27,9 @@ def post(db: Session, stronghold: StrongholdSchema):
   db.refresh(db_item)
   return db_item
 
-def withinDistance(db: Session, search_range: CoordinateSchema):
+def withinDistance(db: Session, coordinates: tuple[float, float], distance: float):
   db_items = db.query(Stronghold).filter(
-    func.ST_Distance_Sphere(Stronghold.coordinates, WKTElement(tuple2PointString(search_range.coordinates), srid=4326)) <= search_range.distance
+    func.ST_Distance_Sphere(Stronghold.coordinates, WKTElement(tuple2PointString(coordinates), srid=4326)) <= distance
   ).all()
   return db_items
 
