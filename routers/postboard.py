@@ -91,7 +91,7 @@ async def registerFoundPost(postSchemaAdd: mysql_schema.PostSchemaAddFound,
                                                                 user_id=user.id, 
                                                                 coordinates=tuple2PointString(postSchemaAdd.coordinates), 
                                                                 description=postSchemaAdd.description,
-                                                                is_lost=postSchemaAdd.is_lost))):
+                                                                is_lost=False))):
     raise HTTPException(status_code=500, detail='Failed to register post')
   
   # if found, register kept location
