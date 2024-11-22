@@ -133,7 +133,7 @@ class PostSchemaAddLost(BaseModel):
 
 class PostSchemaAddFound(BaseModel):
   title: str
-  coordinates: tuple[float]
+  coordinates: tuple[float, float]
   kept_coordinates: tuple[float, float]
   stronghold_id: Optional[int]
   hashtags: list[str] = []
@@ -165,7 +165,8 @@ class PostSchemaSearch(BaseModel):
 # Stronghold Schema
 class StrongholdSchemaAdd(BaseModel):
   name: str
-  coordinates: tuple
+  lat: float
+  lng: float
   description: str
 
 
