@@ -8,7 +8,7 @@ from db.mysql import model as mysql_model
 from db.mysql import crud as mysql_crud
 from db.mysql import schema as mysql_schema
 
-from .suggest import suggestion
+from .recommand import suggestion
 
 
 async def updateMatchRank():

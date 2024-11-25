@@ -11,7 +11,7 @@ from db.mysql import model as mysql_model
 from db.mysql import crud as mysql_crud
 from db.mysql import schema as mysql_schema
 
-from tasks.suggest import suggestion
+from tasks.recommand import suggestion
 
 from .dependencies import loadUser
 
