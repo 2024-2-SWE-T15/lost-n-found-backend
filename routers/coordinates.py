@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request, Response, HTTPException, Query
 
 from sqlalchemy.orm import Session
 
-from modules.utils import parsePointString, point2Tuple, tuple2PointString, convertTuple2Zone
+from modules.utils import thumbnail, img2DataURL, point2TupleStructure
 
 from db.mysql import database as mysql_db
 from db.mysql import model as mysql_model
@@ -26,8 +26,12 @@ async def getCoordinates(lat: float = Query(...),
     raise HTTPException(status_code=400, detail='Invalid coordinates')
   
   items = mysql_crud.search.getByCoordinates(db, (lat, lng), distance)
-  for item in items:
-    item.coordinates = point2Tuple(item.coordinates)
+  for i, item in enumerate(items):
+    items[i] = point2TupleStructure(item)
+    
+    photo = mysql_crud.photo.getAll(db, item.id)
+    if photo:
+      items[i].thumbnail = img2DataURL('png', thumbnail(mysql_crud.photo.get(db, photo[0]).data))
   
   return items
 
