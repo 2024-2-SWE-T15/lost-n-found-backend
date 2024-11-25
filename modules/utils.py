@@ -1,3 +1,4 @@
+import io
 import math
 import base64
 import numpy as np
@@ -88,8 +89,16 @@ def convertTuple2Zone(coordinates: tuple[float, float], gap: float):
 
 
 def postImgName(post_id: str, img_id: str, ext: str):
-  return f"{post_id}_{img_id}.ext"
+  return f"{post_id}_{img_id}.{ext}"
 
+
+def thumbnail(data: bytes, size: tuple[int, int] = (128, 128), quality=85):
+  from PIL import Image
+  img = Image.open(io.BytesIO(data))
+  img.thumbnail(size)
+  buffered = io.BytesIO()
+  img.save(buffered, format="png", quality=quality)
+  return buffered.getvalue()
 
 def dataURL2Img(data_url: str):
   header, base64_data = data_url.split(',', 1)
@@ -97,6 +106,9 @@ def dataURL2Img(data_url: str):
   
   binary_data = base64.b64decode(base64_data)
   return ext, binary_data
+
+def img2DataURL(ext: str, data: bytes):
+  return f"data:image/{ext};base64,{base64.b64encode(data).decode()}"
 
 
 def tokenReform(token: dict, provider: str):
