@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
+from itertools import combinations
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -109,4 +110,67 @@ async def suggest(db: Session,
   # alert user
   return score_df[['post_id_lost']].to_list() if match_rank > -1 else score_df[['post_id_lost']]
   
+
+async def related(db, post_id: str, match_rank=1e9, limit=8):
+  post_df = models2df(mysql_crud.post.search(db, mysql_model.Post(valid=True)))
+  tag_matches_df = models2df(mysql_crud.tag_match.all(db))
+  
+  tag_matches_df = mergeDF([tag_matches_df, post_df[['id', 'title', 'coordinates', 'is_lost']]], on_list=[('post_id', 'id')], drop_list=['id'])
+  
+  src = tag_matches_df[tag_matches_df['post_id'] == post_id]
+  dst = tag_matches_df[tag_matches_df['post_id'] != post_id]
+  
+  src = src.groupby('post_id').agg({'tag_name': list, 
+                                    'coordinates': lambda x: x.iloc[0]}).reset_index()
+
+  dst = dst.groupby('post_id').agg({'title': lambda x: x.iloc[0],
+                                    'tag_name': list, 
+                                    'coordinates': lambda x: x.iloc[0],
+                                    'is_lost': lambda x: x.iloc[0]}).reset_index()
+  
+  if src.empty or dst.empty:
+    return
+  
+  def calculate_match_rate(lost_tags, found_tags):
+    matched_tags = [tag for tag in lost_tags if tag in found_tags]
+    match_rate = len(matched_tags) / len(found_tags) if found_tags else 0
+    return match_rate
+  
+  def match_rate_condition(match_rank):
+    if match_rank // 2 == 0:
+      return FIRST_MATCH_RATE
+    elif match_rank // 2 == 1:
+      return SECOND_MATCH_RATE
+    else:
+      return OTHER_MATCH_RATE
     
+  def match_distance(match_rank):
+    if (match_rank-1) // 2 == 0:
+      return FIRST_SUGGEST_DISTANCE
+    elif (match_rank-1) // 2 == 1:
+      return SECOND_SUGGEST_DISTANCE
+    elif (match_rank-1) // 2 == 2:
+      return THIRD_SUGGEST_DISTANCE
+    elif (match_rank-1) // 2 == 3:
+      return FOURTH_SUGGEST_DISTANCE
+    else:
+      return OTHER_SUGGEST_DISTANCE
+  
+  # print(src)
+  # print(dst)
+  
+  score_df = pd.merge(src, dst, how='cross', suffixes=('_src', '_dst'))
+  score_df.drop(score_df[
+    score_df.apply(lambda row: haversineDistance(row['coordinates_src'], row['coordinates_dst']) > match_distance(match_rank), axis=1)
+  ].index, inplace=True)
+  
+  score_df['match_rate'] = score_df.apply(lambda row: calculate_match_rate(row['tag_name_src'], row['tag_name_dst']), axis=1)
+  score_df.drop(score_df[
+    score_df.apply(lambda row: row['match_rate'] < match_rate_condition(match_rank), axis=1)
+  ].index, inplace=True)
+  
+  
+  return score_df[score_df['is_lost'] == True].nlargest(4, 'match_rate')[['post_id_dst', 'title', 'tag_name_dst']] \
+                    .rename(columns={'post_id_dst': 'post_id', 'tag_name_dst': 'tag_name'}).to_dict(), \
+      score_df[score_df['is_lost'] == False].nlargest(4, 'match_rate')[['post_id_dst', 'title', 'tag_name_dst']] \
+                    .rename(columns={'post_id_dst': 'post_id', 'tag_name_dst': 'tag_name'}).to_dict()
