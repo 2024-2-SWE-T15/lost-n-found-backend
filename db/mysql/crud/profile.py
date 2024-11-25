@@ -14,17 +14,13 @@ def getProfile(db: Session, user_id: str):
   db_item = db.query(mysql_model.Profile).filter(mysql_model.Profile.user_id == user_id).first()
   return db_item
 
-def registerProfile(db: Session, profile: mysql_schema.ProfileSchema):
-  item = mysql_model.Profile(user_id=profile.user_id,
-                             data=profile.data)
-  db.add(item)
-  db.commit()
-  db.refresh(item)
-  return item
-
 def updateProfile(db: Session, profile: mysql_schema.ProfileSchema):
   item = db.query(mysql_model.Profile).filter(mysql_model.Profile.user_id == profile.user_id).first()
-  item.data = profile.data
+  if not item:
+    item = mysql_model.Profile(user_id=profile.user_id, data=profile.data)
+    db.add(item)
+  else:
+    item.data = profile.data
   db.commit()
   db.refresh(item)
   return item
