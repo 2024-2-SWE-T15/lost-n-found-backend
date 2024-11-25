@@ -20,7 +20,7 @@ class User(Base):
   email = Column(String, nullable=True)
 
   post = relationship('Post', back_populates='user')
-  profile = relationship('profile', back_populates='user')
+  profile = relationship('Profile', back_populates='user')
 
 class Post(Base):
   __tablename__ = 'posts'
