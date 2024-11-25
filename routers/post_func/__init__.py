@@ -4,11 +4,12 @@ from . import search
 from . import personal_id
 from . import hashtag
 from . import image
+from . import recommand
 
 router = APIRouter()
 
 router.include_router(search.router)
-
+router.include_router(recommand.router)
 
 post_router = APIRouter(prefix='/{post_id}', tags=[])
 
