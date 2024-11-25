@@ -10,11 +10,11 @@ from db.mysql import crud as mysql_crud
 from db.mysql import schema as mysql_schema
 
 
-def getProfile(db: Session, user_id: str):
+def get(db: Session, user_id: str):
   db_item = db.query(mysql_model.Profile).filter(mysql_model.Profile.user_id == user_id).first()
   return db_item
 
-def updateProfile(db: Session, profile: mysql_schema.ProfileSchema):
+def update(db: Session, profile: mysql_schema.ProfileSchema):
   item = db.query(mysql_model.Profile).filter(mysql_model.Profile.user_id == profile.user_id).first()
   if not item:
     item = mysql_model.Profile(user_id=profile.user_id, data=profile.data)
@@ -25,7 +25,7 @@ def updateProfile(db: Session, profile: mysql_schema.ProfileSchema):
   db.refresh(item)
   return item
 
-def deleteProfile(db: Session, user_id: str):
+def delete(db: Session, user_id: str):
   item = db.query(mysql_model.Profile).filter(mysql_model.Profile.user_id == user_id).first()
   db.delete(item)
   db.commit()
