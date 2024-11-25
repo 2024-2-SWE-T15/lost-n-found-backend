@@ -9,7 +9,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from modules import oauth2
-from modules.utils import tokenReform
+from modules.utils import tokenReform, dataURL2Img, img2DataURL
 
 from db.mysql import database as mysql_db
 from db.mysql import model as mysql_model
@@ -117,7 +117,11 @@ async def authCallback(request: Request, provider: str,
 
 
 @router.get('/userinfo')
-async def getUserInfo(user: mysql_model.User = Depends(loadUser)):
+async def getUserInfo(db: Session = Depends(mysql_db.getDB),
+                      user: mysql_model.User = Depends(loadUser)):
+  if user.profile_image_url == '-':
+    profile = mysql_crud.profile.get(db, user.id)
+    user.profile_image_url = img2DataURL(profile.extension, profile.data)
   return user
 
 
@@ -125,9 +129,26 @@ async def getUserInfo(user: mysql_model.User = Depends(loadUser)):
 async def updateUserInfo(userSchemaUpdate: mysql_schema.UserSchemaUpdate,
                          db: Session = Depends(mysql_db.getDB),
                          user: mysql_model.User = Depends(loadUser)):
-  user = mysql_crud.user.update(db, mysql_model.User(user.id, userSchemaUpdate.nickname, userSchemaUpdate.profile_image_url, userSchemaUpdate.email))
+  if userSchemaUpdate.profile_image_url:
+    tmp = dataURL2Img(userSchemaUpdate.profile_image_url)
+    profile = mysql_crud.profile.update(db, mysql_model.Profile(user_id=user.id, data=tmp[1], extension=tmp[0]))
+    if not profile:
+      raise HTTPException(status_code=500, detail='Failed to update profile image')
+    
+    user = mysql_crud.user.update(db, mysql_model.User(id=user.id, 
+                                                      nickname=userSchemaUpdate.nickname,
+                                                      platform=user.platform,
+                                                      profile_image_url="-",
+                                                      email=userSchemaUpdate.email))
+    
+  else:
+    user = mysql_crud.user.update(db, mysql_model.User(id=user.id, 
+                                                      nickname=userSchemaUpdate.nickname,
+                                                      platform=user.platform,
+                                                      email=userSchemaUpdate.email))
   if not user:
     raise HTTPException(status_code=500, detail='Failed to update user')
+  
   return user
 
 
