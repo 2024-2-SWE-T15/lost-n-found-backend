@@ -139,14 +139,14 @@ modelDict = {
 }
 
 def model2Array(model):
-  return [(value if not isinstance(value, (WKTElement, WKBElement)) 
-           else point2Tuple(value))
-           for attr, value in model.__dict__.items() if not isinstance(value, InstanceState)]
+  return [(getattr(model, attr) if not isinstance(getattr(model, attr), (WKTElement, WKBElement)) 
+           else point2Tuple(getattr(model, attr)))
+           for attr in modelDict[type(model)]]
 
 def model2Dict(model):
-  return {attr: (value if not isinstance(value, (WKTElement, WKBElement)) 
-                 else point2Tuple(value))
-          for attr, value in model.__dict__.items() if not isinstance(value, InstanceState)}
+  return {attr: (getattr(model, attr) if not isinstance(getattr(model, attr), (WKTElement, WKBElement)) 
+                 else point2Tuple(getattr(model, attr)))
+          for attr in modelDict[type(model)]}
 
 
 def models2Array(models):
