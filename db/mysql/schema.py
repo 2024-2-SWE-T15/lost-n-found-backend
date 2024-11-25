@@ -84,6 +84,14 @@ class KeptSchema(BaseModel):
   
   class Config:
     from_attributes = True
+    
+    
+class ProfileSchema(BaseModel):
+  user_id: str
+  data: Optional[bytes]
+  
+  class Config:
+    from_attributes = True
 
 
 # View Schema

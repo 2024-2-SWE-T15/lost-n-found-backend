@@ -20,6 +20,7 @@ class User(Base):
   email = Column(String, nullable=True)
 
   post = relationship('Post', back_populates='user')
+  profile = relationship('profile', back_populates='user')
 
 class Post(Base):
   __tablename__ = 'posts'
@@ -102,6 +103,15 @@ class Kept(Base):
   
   post = relationship('Post', back_populates='kept')
   stronghold = relationship('Stronghold', back_populates='kept')
+  
+
+class Profile(Base):
+  __tablename__ = 'profiles'
+  
+  user_id = Column(String, ForeignKey('users.id'), primary_key=True, index=True)
+  data = Column(LargeBinary, nullable=True)
+  
+  user = relationship('User', back_populates='profile')
   
 
 class FoundView(Base):
