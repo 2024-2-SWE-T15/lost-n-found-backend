@@ -4,6 +4,7 @@ import base64
 import numpy as np
 import pandas as pd
 from datetime import datetime
+from PIL import Image
 
 from typing import Union
 
@@ -93,7 +94,6 @@ def postImgName(post_id: str, img_id: str, ext: str):
 
 
 def thumbnail(data: bytes, size: tuple[int, int] = (128, 128), quality=85):
-  from PIL import Image
   img = Image.open(io.BytesIO(data))
   img.thumbnail(size)
   buffered = io.BytesIO()
