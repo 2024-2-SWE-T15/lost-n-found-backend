@@ -7,6 +7,8 @@ from db.mysql import model as mysql_model
 from db.mysql import crud as mysql_crud
 from db.mysql import schema as mysql_schema
 
+from modules.utils import img2DataURL
+
 from routers.dependencies import loadUser
 
 
@@ -15,7 +17,11 @@ router = APIRouter(prefix='/image', tags=['Post-Image'])
 @router.get('/')
 async def getPhotos(post_id: str,
                     db: Session = Depends(mysql_db.getDB)):
-  return mysql_crud.photo.getAll(db, post_id)
+  images = mysql_crud.photo.getAll(db, post_id)
+  for i, image in enumerate(images):
+    img = mysql_crud.photo.get(db, image)
+    images[i] = img2DataURL(img.extension, img.data)
+  return images
 
 @router.post('/')
 async def registerPhoto(post_id: str,
