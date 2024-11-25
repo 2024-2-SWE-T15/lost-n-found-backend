@@ -116,6 +116,11 @@ async def authCallback(request: Request, provider: str,
   return response
 
 
+@router.get('/userinfo')
+async def getUserInfo(user: mysql_model.User = Depends(loadUser)):
+  return user
+
+
 @router.put('/')
 async def updateUserInfo(userSchemaUpdate: mysql_schema.UserSchemaUpdate,
                          db: Session = Depends(mysql_db.getDB),
