@@ -110,6 +110,7 @@ class Profile(Base):
   
   user_id = Column(String, ForeignKey('users.id'), primary_key=True, index=True)
   data = Column(LargeBinary, nullable=True)
+  extension = Column(String, nullable=True)
   
   user = relationship('User', back_populates='profile')
   

@@ -17,10 +17,11 @@ def get(db: Session, user_id: str):
 def update(db: Session, profile: mysql_schema.ProfileSchema):
   item = db.query(mysql_model.Profile).filter(mysql_model.Profile.user_id == profile.user_id).first()
   if not item:
-    item = mysql_model.Profile(user_id=profile.user_id, data=profile.data)
+    item = mysql_model.Profile(user_id=profile.user_id, data=profile.data, extension=profile.extension)
     db.add(item)
   else:
     item.data = profile.data
+    item.extension = profile.extension
   db.commit()
   db.refresh(item)
   return item
