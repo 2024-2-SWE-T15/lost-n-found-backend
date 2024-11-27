@@ -6,7 +6,7 @@ from . import hashtag
 from . import image
 from . import recommand
 
-router = APIRouter()
+router = APIRouter(tags=[])
 
 router.include_router(search.router)
 router.include_router(recommand.router)
