@@ -136,6 +136,7 @@ modelDict = {
   Photo: ['id', 'post_id', 'extension', 'data'],
   Identity: ['post_id', 'name', 'value'],
   TagMatch: ['post_id', 'tag_name'],
+  Kept: ['post_id', 'stronghold_id', 'coordinates'],
 }
 
 def model2Array(model):
@@ -154,7 +155,7 @@ def models2Array(models):
 
 
 def models2df(models):
-  return pd.DataFrame(np.array(models2Array(models), dtype=object), columns=modelDict[type(models[0])])
+  return pd.DataFrame(np.array(models2Array(models), dtype=object), columns=modelDict[type(models[0])]) if models else pd.DataFrame()
 
 
 def mergeDF(df_list:list[pd.DataFrame], on_list=list[Union[str, tuple[str, str]]], drop_list=list[str]):
