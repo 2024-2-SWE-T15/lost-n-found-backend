@@ -32,6 +32,8 @@ async def getCoordinates(lat: float = Query(...),
     photo = mysql_crud.photo.getAll(db, item.id)
     if photo:
       items[i].thumbnail = img2DataURL('png', thumbnail(mysql_crud.photo.get(db, photo[0]).data))
+    
+    items[i].hashtags = mysql_crud.tag_match.getAll(db, item.id)
   
   return items
 

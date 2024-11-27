@@ -26,7 +26,21 @@ async def getPost(post_id: str = Query(...),
   if not post:
     raise HTTPException(status_code=404, detail='Post not found')
   
-  return model2Dict(post)
+  post.nickname = mysql_crud.user.get(db, mysql_model.User(id=post.user_id)).nickname
+  post.hashtags = mysql_crud.tag_match.getAll(db, post.id)
+  if not post.is_lost:
+    post.kept_place = mysql_crud.kept.get(db, post.id)
+    if post.kept_place.stronghold_id is not None:
+      post.kept_place.stronghold = mysql_crud.stronghold.get(db, post.kept_place.stronghold_id)
+      del post.kept_place.stronghold_id
+      del post.kept_place.coordinates
+      
+      post.kept_place.stronghold = point2TupleStructure(post.kept_place.stronghold)
+    
+    if not post.kept_place.stronghold:
+      post.kept_place = point2TupleStructure(post.kept_place)
+    
+  return point2TupleStructure(post)
 
 
 @router.post('/lost')
