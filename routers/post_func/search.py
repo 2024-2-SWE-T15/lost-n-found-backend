@@ -22,17 +22,22 @@ router = APIRouter(prefix='/search', tags=['Post-Search'])
 @router.get('/')
 async def searchPost(postSchemaSearch: mysql_schema.PostSchemaSearch = Query(None),
                      db: Session = Depends(mysql_db.getDB)):
+  if not postSchemaSearch.query and not postSchemaSearch.tags and not postSchemaSearch.coordinates:
+    raise HTTPException(status_code=400, detail='At least one of the following must be provided: query, tags, coordinates')
+  
   weights = [float(os.getenv('FIRST_WEIGHT')), 
              float(os.getenv('SECOND_WEIGHT')), 
              float(os.getenv('THIRD_WEIGHT'))]
   OTHER_WEIGHT = float(os.getenv('OTHER_WEIGHT'))
   
-  if postSchemaSearch.coordinates ^ postSchemaSearch.distance:
+  if (not postSchemaSearch.coordinates) ^ (not postSchemaSearch.distance):
     raise HTTPException(status_code=400, detail='Coordinates and distance must be provided together')
   
   post_df = models2df(mysql_crud.search.get(db, postSchemaSearch))
   tag_matches_df = models2df(mysql_crud.tag_match.all(db))
 
+  if post_df.empty:
+    return []
 
   if postSchemaSearch.coordinates and postSchemaSearch.distance:
     post_df = post_df[post_df.apply(
@@ -67,16 +72,20 @@ async def searchPost(postSchemaSearch: mysql_schema.PostSchemaSearch = Query(Non
   
   post_data_df = post_df
   if postSchemaSearch.query:
-    post_data_df = post_data_df.merge(title_score_df, on='title').merge(description_score_df, on='description').merge(final_tag_matched_score_df, left_on='id', right_on='post_id').drop(columns='post_id')
+    post_data_df = post_data_df.merge(title_score_df, on='title') \
+                               .merge(description_score_df, on='description') \
+                               .merge(final_tag_matched_score_df, left_on='id', right_on='post_id') \
+                                  .drop(columns='post_id')
   
   if postSchemaSearch.tags:
-    post_data_df = post_data_df.merge(final_hit_tag_matches_df, left_on='id', right_on='post_id').drop(columns='post_id')
+    post_data_df = post_data_df.merge(final_hit_tag_matches_df, left_on='id', right_on='post_id') \
+                                  .drop(columns='post_id')
   
   
-  post_data_df['total_score'] =(post_data_df['title_score']**2 * float(os.getenv('TITLE_WEIGHT')) + \
-                                post_data_df['description_score']**2 * float(os.getenv('DESCRIPTION_WEIGHT')) + \
-                                post_data_df['weighted_hashtag_score']**2 * float(os.getenv('TAG_WEIGHT'))) if postSchemaSearch.query else 0  + \
-                                post_data_df['hit_score']**2 * float(os.getenv('TAG_HIT_WEIGHT'))
+  post_data_df['total_score'] =(post_data_df['title_score']**2 * float(os.getenv('TITLE_WEIGHT')) if postSchemaSearch.query else 0 + \
+                                post_data_df['description_score']**2 * float(os.getenv('DESCRIPTION_WEIGHT')) if postSchemaSearch.query else 0 + \
+                                post_data_df['weighted_hashtag_score']**2 * float(os.getenv('TAG_WEIGHT')) if postSchemaSearch.query else 0 + \
+                                post_data_df['hit_score']**2 * float(os.getenv('TAG_HIT_WEIGHT')) if postSchemaSearch.tags else 0) ** 0.5
   post_data_df.drop(columns=['title_score', 'description_score', 'weighted_hashtag_score'], inplace=True) if postSchemaSearch.query else None
   
   post_data_df = post_data_df.sort_values(by='total_score', ascending=False).head(postSchemaSearch.limit if postSchemaSearch.limit else 10)
