@@ -21,7 +21,7 @@ def register(db: Session, user: UserSchemaAdd):
   return db_item
 
 def get(db: Session, user: UserSchemaGet):
-  db_item = db.query(User).filter(User.id == user.id, User.platform == user.platform).first()
+  db_item = db.query(User).filter(User.id == user.id).first()
   return db_item
 
 def update(db: Session, user: UserSchema):
