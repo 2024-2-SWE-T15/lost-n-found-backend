@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 
 from sqlalchemy.orm import Session
 
-from modules.utils import haversineDistance, models2df, modelDict
+from modules.utils import thumbnail, img2DataURL, haversineDistance, models2df, modelDict
 
 from db.mysql import database as mysql_db
 from db.mysql import model as mysql_model
@@ -90,4 +90,10 @@ async def searchPost(postSchemaSearch: mysql_schema.PostSchemaSearch = Query(Non
   
   post_data_df = post_data_df.sort_values(by='total_score', ascending=False).head(postSchemaSearch.limit if postSchemaSearch.limit else 10)
   
-  return post_data_df.to_dict(orient='records')
+  posts = post_data_df.to_dict(orient='records')
+  for post in posts:
+    photo = mysql_crud.photo.getAll(db, post['id'])
+    post['thumbnail'] = img2DataURL('png', thumbnail(mysql_crud.photo.get(db, photo[0]).data)) if photo else None
+    post['hashtags'] = mysql_crud.tag_match.getAll(db, post['id'])
+  
+  return posts
