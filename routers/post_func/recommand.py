@@ -27,6 +27,7 @@ async def getRecommand(post_id: str,
   related_dict = {}
   related_dict['lost'] = []
   related_dict['found'] = []
+  print(related_found)
   for key, value in related_lost['post_id'].items():
     photo = mysql_crud.photo.getAll(db, value)
     related_dict['lost'].append({
@@ -35,7 +36,7 @@ async def getRecommand(post_id: str,
       'tags': related_lost['tag_name'][key],
       'thumbnail': img2DataURL('png', thumbnail(mysql_crud.photo.get(db, photo[0]).data)) if photo else None,
     })
-  for key, value in related_found['post_id']:
+  for key, value in related_found['post_id'].items():
     photo = mysql_crud.photo.getAll(db, value)
     related_dict['found'].append({
       'id': value,
