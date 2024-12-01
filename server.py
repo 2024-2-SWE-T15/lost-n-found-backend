@@ -89,7 +89,8 @@ app.add_middleware(SessionMiddleware,
                    https_only=True,
                    same_site='None',)
 app.add_middleware(CORSMiddleware, 
-                   allow_origins=['*'], 
+                  #  allow_origins=[os.getenv('FRONTEND_URL')], 
+                   allow_origins=['*'],
                    allow_credentials=True, 
                    allow_methods=['*'], 
                    allow_headers=['*'])
@@ -107,7 +108,7 @@ async def root():
 
 @app.get("/test")
 async def test():
-  # if alert.send_alert("ekfzkr@kakao.com", "주현", [("03160742-7b9a-4266-ab12-ac7163d75df2", "잃어버린 린스, 어디에 있을까요? 도움이 필요해요!", "2024-11-14 03:01:57")]):
+  # if alert.send_alert("minemin7@g.skku.edu", "김민겸", [("03160742-7b9a-4266-ab12-ac7163d75df2", "잃어버린 린스, 어디에 있을까요? 도움이 필요해요!", "2024-11-14 03:01:57")]):
   #   return Response(status_code=204)
   return Response(status_code=404)
 
